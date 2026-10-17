@@ -15,7 +15,7 @@
      - **"Later"** installs silently on quit, without reopening.
   - The prompt waits while a fight is running.
   - Settings has an Updates panel with the version, status and "Check now".
-- **Release workflow** (`.github/workflows/release.yml`), triggered by tags `v*.*.*`, runs on a Windows runner:
+- **Release workflow** (`.github/workflows/release.yml`) runs when `main` carries a version with no release yet (or on a `v*.*.*` tag); the release creates the tag. It runs on a Windows runner:
   1. Sets the version from the tag, then `npm ci`, type-check and tests.
   2. Builds the single-file game.
   3. Installs NSIS, packages the app (electron-builder `dir`, with the icon set by resedit) and builds the custom NSIS installer.
@@ -27,7 +27,7 @@
   - "Later": the pill shows "installs when you quit", and quitting hands over to `installer /S`.
   - The 1.1.0 installer builds with the new silent-update and relaunch code. Full suite: 52 tests passing.
 - **Not tested here:** the Windows silent install and relaunch themselves, and the GitHub Actions run (it first runs
-  when the v1.1.0 tag is pushed).
+  when v1.1.0 reaches `main`).
 - **Upgrade path:** v1.0.0 has no updater, so v1.1.0 is installed by hand once (over the old install, same folder).
   From then on updates are automatic.
 

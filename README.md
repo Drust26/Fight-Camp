@@ -29,10 +29,11 @@ silently and reopens it ("Later" installs it when you quit). Updates never touch
 1. Add a section for the new version at the top of `CHANGELOG.md` (it becomes the release text and the in-game
    update notes).
 2. Set the same version in `desktop/package.json`.
-3. Commit, then tag and push: `git tag v1.2.0 && git push origin main v1.2.0`.
+3. Commit and push to `main`.
 
-The **Release** workflow (`.github/workflows/release.yml`) then type-checks and tests the game, builds the Windows
-installer on a Windows runner and publishes the release with the installer and its `.sha256`. Installed games pick it
+When `main` carries a version that has no release yet, the **Release** workflow (`.github/workflows/release.yml`)
+type-checks and tests the game, builds the Windows installer on a Windows runner and publishes release `v<version>`
+(creating the tag) with the installer and its `.sha256`. Pushing a tag like `v1.2.0` works too. Installed games pick it
 up on their next launch. Every push to `main` also runs the **CI** workflow (type-check, tests, builds).
 
 To build the installer yourself: `SINGLE=1 npx vite build --outDir dist-single`, then `cd desktop && npm ci && npm run dist:win`.

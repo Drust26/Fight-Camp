@@ -1,16 +1,46 @@
-# Push a tag like v1.2.0 to publish a release. The Windows installer is built here, published with its SHA-256,
-# and installed games pick it up on their next launch (desktop/updater.cjs).
+# Publishes a release whenever main carries a version (desktop/package.json) that has no release yet, or when a tag
+# like v1.2.0 is pushed. The Windows installer is built here and published with its SHA-256 under the tag v<version>
+# (created by the release), and installed games pick it up on their next launch (desktop/updater.cjs).
 name: Release
 
 on:
   push:
+    branches: [main]
     tags: ['v*.*.*']
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      publish: ${{ steps.v.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION=$(node -p "require('./desktop/package.json').version"); fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists: nothing to publish."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Publishing v$VERSION."
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
   windows:
+    needs: check
+    if: needs.check.outputs.publish == 'true'
     runs-on: windows-latest
     defaults:
       run:
@@ -25,9 +55,9 @@ jobs:
             package-lock.json
             desktop/package-lock.json
 
-      - name: Version from the tag
+      - name: Version
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ needs.check.outputs.version }}"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           cd desktop && npm version "$VERSION" --no-git-tag-version --allow-same-version
 
@@ -66,6 +96,8 @@ jobs:
       - name: Publish the release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
           name: Fight Camp ${{ env.VERSION }}
           body_path: release-notes.md
           files: |
