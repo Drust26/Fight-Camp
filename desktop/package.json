@@ -1,0 +1,78 @@
+{
+  "name": "fight-camp",
+  "productName": "Fight Camp",
+  "version": "1.1.0",
+  "description": "Fight Camp \u2014 MMA career simulator",
+  "author": "Fight Camp",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "prepare-app": "node prepare.cjs",
+    "start": "electron .",
+    "dist:win": "node prepare.cjs && electron-builder --win dir --x64 && node make-installer.cjs",
+    "dist:linux": "node prepare.cjs && electron-builder --linux dir"
+  },
+  "build": {
+    "appId": "game.fightcamp.desktop",
+    "productName": "Fight Camp",
+    "executableName": "FightCamp",
+    "copyright": "Fight Camp. All organisations, fighters and brands in the game are fictional.",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "storage.cjs",
+      "updater.cjs",
+      "app/**/*",
+      "build/icon.png"
+    ],
+    "afterPack": "./afterPack.cjs",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Fight Camp",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "FightCamp-Setup-${version}.exe",
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": "dir",
+      "icon": "build/icon.png",
+      "category": "Game"
+    },
+    "electronLanguages": [
+      "en-US",
+      "en-GB",
+      "fr"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "resedit": "^2.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Drust26/Fight-Camp.git"
+  }
+}

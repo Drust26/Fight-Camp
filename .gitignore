@@ -1,0 +1,8 @@
+node_modules
+dist/
+dist-single/
+*.tsbuildinfo
+.DS_Store
+desktop/release/
+desktop/app/
+desktop/build/

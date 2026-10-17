@@ -1,0 +1,73 @@
+# Push a tag like v1.2.0 to publish a release. The Windows installer is built here, published with its SHA-256,
+# and installed games pick it up on their next launch (desktop/updater.cjs).
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+
+      - name: Version from the tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          cd desktop && npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Install
+        run: |
+          npm ci
+          cd desktop && npm ci
+
+      - name: Type-check and test
+        run: |
+          npx tsc -b
+          npm test
+
+      - name: Build the game (single file)
+        run: SINGLE=1 npx vite build --outDir dist-single
+
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) { choco install nsis -y --no-progress }
+          "MAKENSIS=C:\Program Files (x86)\NSIS\makensis.exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Package and build the installer
+        run: |
+          cd desktop
+          node prepare.cjs
+          npx electron-builder --win dir --x64 --publish never
+          node make-installer.cjs
+          cd release
+          sha256sum "FightCamp-Setup-$VERSION.exe" | awk '{print $1 "  FightCamp-Setup-'"$VERSION"'.exe"}' > "FightCamp-Setup-$VERSION.exe.sha256"
+          cat "FightCamp-Setup-$VERSION.exe.sha256"
+
+      - name: Release notes
+        run: node scripts/release-notes.cjs "$VERSION" > release-notes.md
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Fight Camp ${{ env.VERSION }}
+          body_path: release-notes.md
+          files: |
+            desktop/release/FightCamp-Setup-${{ env.VERSION }}.exe
+            desktop/release/FightCamp-Setup-${{ env.VERSION }}.exe.sha256
