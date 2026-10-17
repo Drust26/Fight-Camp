@@ -1,4 +1,5 @@
 // Shared career helpers: calendar, inbox, ledger, money, ages.
+import { getLang, locale } from '../i18n';
 import { RNG } from './rng';
 import type { GameState, InboxMessage, LedgerEntry } from './types';
 import { GYM, LIFESTYLE } from '../data/training';
@@ -10,10 +11,17 @@ export const dateOf = (day: number) => new Date(START + day * 86400000);
 export const weekday = (day: number) => ((day % 7) + 7) % 7; // 0 = Monday
 export const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export function fmtDate(day: number, opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }) {
+  return dateOf(day).toLocaleDateString(locale(), { ...opts, timeZone: 'UTC' });
+}
+/** English formats for text the game stores (inbox, news, timeline): translated when shown, never stored in French. */
+export function fmtDateEn(day: number, opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }) {
   return dateOf(day).toLocaleDateString('en-GB', { ...opts, timeZone: 'UTC' });
 }
+export const moneyEn = (n: number) => (n < 0 ? '-' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
 export const ageOf = (bornDay: number, day: number) => (day - bornDay) / 365;
-export const money = (n: number) => (n < 0 ? '-' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+export const money = (n: number) => getLang() === 'fr'
+  ? (n < 0 ? '-' : '') + Math.abs(Math.round(n)).toLocaleString('fr-FR') + ' $'
+  : (n < 0 ? '-' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
 export const kgToLb = (kg: number) => kg / LB;
 
 /** Run fn with the save's RNG and write the advanced state back (keeps runs reproducible). */

@@ -1,4 +1,5 @@
 // Procedural WebAudio sound effects — original, asset-free, with a silent fallback.
+import { locale } from '../i18n';
 import { store } from './store';
 
 class Audio {
@@ -229,6 +230,7 @@ class Audio {
       if (!sy) return;
       sy.cancel();
       const u = new SpeechSynthesisUtterance(text);
+      u.lang = locale();
       u.rate = 0.95; u.pitch = 0.8; u.volume = Math.min(1, store.settings.master);
       sy.speak(u);
     } catch { /* unsupported */ }

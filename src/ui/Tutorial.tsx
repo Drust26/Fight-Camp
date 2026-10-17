@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { Btn, useNav, type Tab } from './components/common';
 import { store, useGame } from '../game/store';
 
@@ -22,15 +23,15 @@ export function CoachTour() {
     if (n < STEPS.length) nav.setTab(STEPS[n].tab);
   };
   return (
-    <div className="coach" role="dialog" aria-label="Tutorial">
-      <div className="who"><div className="av">RD</div><div><div style={{ fontWeight: 700 }}>Coach Ray Dunn</div><div className="tiny dim">Tutorial {step + 1}/{STEPS.length}</div></div></div>
-      <h3 style={{ marginBottom: 6 }}>{s.title}</h3>
-      <p className="small muted" style={{ marginTop: 0 }}>{s.body}</p>
+    <div className="coach" role="dialog" aria-label={t('Tutorial')}>
+      <div className="who"><div className="av">RD</div><div><div style={{ fontWeight: 700 }}>Coach Ray Dunn</div><div className="tiny dim">{t('Tutorial {n}/{m}', { n: step + 1, m: STEPS.length })}</div></div></div>
+      <h3 style={{ marginBottom: 6 }}>{t(s.title)}</h3>
+      <p className="small muted" style={{ marginTop: 0 }}>{t(s.body)}</p>
       <div className="row between">
-        <Btn variant="ghost" size="sm" onClick={() => store.act((g) => { g.tutorialStep = -1; })}>Skip tour</Btn>
+        <Btn variant="ghost" size="sm" onClick={() => store.act((g) => { g.tutorialStep = -1; })}>{t('Skip tour')}</Btn>
         <div className="row">
-          {step === STEPS.length - 1 && <Btn size="sm" onClick={() => { store.act((g) => { g.tutorialStep = -1; }); nav.go('practice'); }}>Open Practice Arena</Btn>}
-          <Btn variant="primary" size="sm" onClick={next}>{step === STEPS.length - 1 ? 'Done' : 'Next'}</Btn>
+          {step === STEPS.length - 1 && <Btn size="sm" onClick={() => { store.act((g) => { g.tutorialStep = -1; }); nav.go('practice'); }}>{t('Open Practice Arena')}</Btn>}
+          <Btn variant="primary" size="sm" onClick={next}>{step === STEPS.length - 1 ? t('Done') : t('Next')}</Btn>
         </div>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { DIV, ORG, STYLE } from '../data/world';
 import { GYM, INJURIES, LIFESTYLE, SPONSOR } from '../data/training';
 import { fighterName, genFighter, recStr, wfAppearance } from './fighterGen';
 import { CITIES, playerRank, pointsFor, rankings, recordResult } from './world';
-import { divLimitKg, fmtDate, gymCoachBonus, inbox, ledger, withRng } from './core';
+import { divLimitKg, fmtDate, fmtDateEn, gymCoachBonus, inbox, ledger, moneyEn, withRng } from './core';
 import { addInjury, injuredAttrs } from './training';
 import type { FighterSetup, FightState, RoundStats } from '../combat/engine';
 import { sumStats } from '../combat/engine';
@@ -163,21 +163,21 @@ export function generateOffers(st: GameState, rng: RNG) {
           inv.sfx = st.day;
           st.offers.push(io); st.lastOfferDay = st.day;
           const up = Object.keys(DIV).indexOf(p.divisionId) > Object.keys(DIV).indexOf(inv.div);
-          inbox(st, 'offer', 'CHAMPION VS CHAMPION', `${fighterName(inv)} (${recStr(inv.rec)}), the ${ORG[p.orgId].short} ${DIV[inv.div].name} champion with ${inv.rdf ?? 0} straight defenses, is moving ${up ? 'up' : 'down'} to challenge you for your ${DIV[p.divisionId].name} title on ${fmtDate(io.day)}. If he wins, he holds two belts.`);
+          inbox(st, 'offer', 'CHAMPION VS CHAMPION', `${fighterName(inv)} (${recStr(inv.rec)}), the ${ORG[p.orgId].short} ${DIV[inv.div].name} champion with ${inv.rdf ?? 0} straight defenses, is moving ${up ? 'up' : 'down'} to challenge you for your ${DIV[p.divisionId].name} title on ${fmtDateEn(io.day)}. If he wins, he holds two belts.`);
           addNews(st, { kind: 'superfight', title: `${fighterName(inv)} calls out ${p.firstName} ${p.lastName}`, body: `The ${ORG[p.orgId].short} ${DIV[inv.div].name} champion wants a champion-vs-champion fight for the ${DIV[p.divisionId].name} title.`, refs: [inv.id, 'player'], org: p.orgId, div: p.divisionId, imp: 2 });
           return;
         }
       }
       const top = rankings(st, p.orgId, p.divisionId).filter((r) => !r.isPlayer && !r.injured).slice(0, 3);
       const o = top.length ? makeOffer(st, rng, { title: true, opponentId: rng.pick(top).id, note: 'Mandatory title defense' }) : null;
-      if (o) { st.offers.push(o); st.lastOfferDay = st.day; inbox(st, 'offer', 'Title defense offer', `${ORG[o.orgId].short} wants you to defend your belt on ${fmtDate(o.day)}.`); }
+      if (o) { st.offers.push(o); st.lastOfferDay = st.day; inbox(st, 'offer', 'Title defense offer', `${ORG[o.orgId].short} wants you to defend your belt on ${fmtDateEn(o.day)}.`); }
       return;
     }
     if (champId && rank !== null && ((rank <= 2 && p.streak >= 2) || (st.titlePush && rank <= 3 && p.streak >= 1))) {
       const champ = st.world.fighters[champId];
       if (champ && champ.injuredUntil < st.day + 30 && champ.bookedUntil <= st.day) {
         const o = makeOffer(st, rng, { title: true, opponentId: champId, note: 'Championship opportunity!' });
-        if (o) { st.offers.push(o); st.lastOfferDay = st.day; inbox(st, 'offer', 'TITLE SHOT OFFER', `The ${ORG[o.orgId].name} is offering you a shot at ${fighterName(champ)}'s belt on ${fmtDate(o.day)}.`); }
+        if (o) { st.offers.push(o); st.lastOfferDay = st.day; inbox(st, 'offer', 'TITLE SHOT OFFER', `The ${ORG[o.orgId].name} is offering you a shot at ${fighterName(champ)}'s belt on ${fmtDateEn(o.day)}.`); }
         return;
       }
     }
@@ -195,7 +195,7 @@ export function generateOffers(st: GameState, rng: RNG) {
     st.offers.push(o);
     st.lastOfferDay = st.day;
     const opp = st.world.fighters[o.opponentId];
-    inbox(st, 'offer', 'New fight offer', `${fighterName(opp)} (${recStr(opp.rec)}) at ${o.eventName}, ${fmtDate(o.day)}.`);
+    inbox(st, 'offer', 'New fight offer', `${fighterName(opp)} (${recStr(opp.rec)}) at ${o.eventName}, ${fmtDateEn(o.day)}.`);
   }
 }
 
@@ -204,7 +204,7 @@ export function canAccept(st: GameState, o: FightOffer): string | null {
   if (p.retired) return 'You are retired.';
   if (st.scheduled) return 'You already have a fight booked.';
   if (o.expiresDay < st.day) return 'This offer has expired.';
-  if (p.medicalSuspensionUntil > o.day) return `Medically suspended until ${fmtDate(p.medicalSuspensionUntil)}.`;
+  if (p.medicalSuspensionUntil > o.day) return `Medically suspended until ${fmtDateEn(p.medicalSuspensionUntil)}.`;
   if (o.day <= st.day) return 'The fight date has passed.';
   const opp = st.world.fighters[o.opponentId];
   if (!opp || opp.retired) return 'Opponent no longer available.';
@@ -229,7 +229,7 @@ export function acceptOffer(st: GameState, offerId: string, camp: CampFocus): st
   if (o.title) st.titlePush = false;
   st.offers = [];
   st.promoterRelation = clamp(st.promoterRelation + 2, -50, 50);
-  inbox(st, 'offer', 'Fight booked', `You will face ${fighterName(opp)} at ${o.eventName} on ${fmtDate(o.day)}. Camp focus: ${CAMP_FOCUS.find((c) => c.id === camp)!.name}.`);
+  inbox(st, 'offer', 'Fight booked', `You will face ${fighterName(opp)} at ${o.eventName} on ${fmtDateEn(o.day)}. Camp focus: ${CAMP_FOCUS.find((c) => c.id === camp)!.name}.`);
   return null;
 }
 
@@ -620,7 +620,7 @@ export function applyFightResult(st: GameState, fs: FightState, adaptMemory?: Re
       }
       return true;
     });
-    inbox(st, 'result', `${won ? 'VICTORY' : draw ? 'DRAW' : 'DEFEAT'} — ${out.method}`, `${won ? 'You beat' : draw ? 'You drew with' : 'You lost to'} ${fighterName(opp)} by ${out.method} in round ${out.round} (${out.time}). Earned ${earned.toLocaleString()}.`);
+    inbox(st, 'result', `${won ? 'VICTORY' : draw ? 'DRAW' : 'DEFEAT'} — ${out.method}`, `${won ? 'You beat' : draw ? 'You drew with' : 'You lost to'} ${fighterName(opp)} by ${out.method} in round ${out.round} (${out.time}). Earned ${moneyEn(earned)}.`);
     if (!p.isPro && p.amateurRecord.w >= 3 && !st.pending.some((e) => e.templateId === 'turnpro'))
       st.pending.push({ id: uid(rng, 'e'), templateId: 'turnpro', day: st.day, params: {} });
     checkAchievements(st, summary);

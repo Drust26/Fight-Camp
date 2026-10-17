@@ -8,6 +8,7 @@ import { BOOST, chooseBelt, statusName, tripleHint, SUPER_ORG } from '../../game
 import { ATTRS, type AttrGroup, type AttrKey } from '../../game/attributes';
 import { DIV } from '../../data/world';
 import type { DivisionId } from '../../game/types';
+import { t, tx } from '../../i18n';
 
 export function BeltChoiceModal() {
   const st = useGame();
@@ -19,28 +20,28 @@ export function BeltChoiceModal() {
   if (!pc) return null;
   const amt = BOOST[pc.level];
   const groups: AttrGroup[] = ['Physical', 'Striking', 'Grappling', 'Mental'];
-  const cut = (d: DivisionId) => { const lim = DIV[d].kg; const pct = Math.max(0, (p.weightKg - lim) / p.weightKg); return pct <= 0 ? 'No weight cut' : `${(pct * 100).toFixed(1)}% cut from ${p.weightKg.toFixed(1)} kg`; };
+  const cut = (d: DivisionId) => { const lim = DIV[d].kg; const pct = Math.max(0, (p.weightKg - lim) / p.weightKg); return pct <= 0 ? t('No weight cut') : t('{pct}% cut from {kg} kg', { pct: (pct * 100).toFixed(1), kg: p.weightKg.toFixed(1) }); };
   return (
-    <Modal title={`${statusName(pc.level)}! Choose your belt`} wide>
-      <p className="muted" style={{ marginBottom: 12 }}>You hold two HFC belts. Choose the one you will defend from now on — the other is vacated. Your {statusName(pc.level).toLowerCase()} status is permanent.</p>
+    <Modal title={t('{status}! Choose your belt', { status: t(statusName(pc.level)) })} wide>
+      <p className="muted" style={{ marginBottom: 12 }}>{t('You hold two HFC belts. Choose the one you will defend from now on — the other is vacated. Your {status} status is permanent.', { status: t(statusName(pc.level)).toLowerCase() })}</p>
       <div className="grid2">
         {[pc.home, pc.won].map((d) => (
           <button key={d} className={`pick ${keep === d ? 'on' : ''}`} onClick={() => setKeep(d)} style={{ alignItems: 'center', textAlign: 'center' }}>
-            <Belt org={SUPER_ORG} width={240} label={`${DIV[d].name} · ${DIV[d].lb} lb`} />
-            <b>Keep the {DIV[d].name} belt</b>
-            <span className="small muted">{d === pc.home ? 'Your original division' : 'The belt you just won'}{d !== p.divisionId ? ' — you move to this division' : ''}</span>
+            <Belt org={SUPER_ORG} width={240} label={`${t(DIV[d].name)} · ${DIV[d].lb} lb`} />
+            <b>{t('Keep the {div} belt', { div: t(DIV[d].name) })}</b>
+            <span className="small muted">{d === pc.home ? t('Your original division') : t('The belt you just won')}{d !== p.divisionId ? ' — ' + t('you move to this division') : ''}</span>
             <span className="tiny"><Scale size={11} style={{ verticalAlign: -1 }} /> {cut(d)}</span>
-            <span className="tiny accent">{tripleHint(pc, d)}</span>
+            <span className="tiny accent">{tx(tripleHint(pc, d))}</span>
           </button>
         ))}
       </div>
       <div className="field" style={{ marginTop: 14 }}>
-        <label><Crown size={12} style={{ verticalAlign: -1 }} /> {statusName(pc.level)} boost: +{amt} to one attribute of your choice</label>
-        <select className="input" value={attr} onChange={(e) => setAttr(e.target.value as AttrKey)} aria-label="Boost attribute">
-          <option value="">Choose an attribute…</option>
+        <label><Crown size={12} style={{ verticalAlign: -1 }} /> {t('{status} boost: +{n} to one attribute of your choice', { status: t(statusName(pc.level)), n: amt })}</label>
+        <select className="input" value={attr} onChange={(e) => setAttr(e.target.value as AttrKey)} aria-label={t('Boost attribute')}>
+          <option value="">{t('Choose an attribute…')}</option>
           {groups.map((g) => (
-            <optgroup key={g} label={g}>
-              {ATTRS.filter((a) => a.group === g).map((a) => <option key={a.key} value={a.key}>{a.name} ({Math.round(p.attrs[a.key])} → {Math.min(99, Math.round(p.attrs[a.key] + amt))})</option>)}
+            <optgroup key={g} label={t(g)}>
+              {ATTRS.filter((a) => a.group === g).map((a) => <option key={a.key} value={a.key}>{t(a.name)} ({Math.round(p.attrs[a.key])} → {Math.min(99, Math.round(p.attrs[a.key] + amt))})</option>)}
             </optgroup>
           ))}
         </select>
@@ -48,8 +49,8 @@ export function BeltChoiceModal() {
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 14 }}>
         <Btn variant="primary" disabled={!keep || !attr} onClick={() => {
           const err = store.act((g) => chooseBelt(g, keep!, attr as AttrKey));
-          if (err) nav.toast(err, 'err'); else { store.saveNow(); nav.toast(`You are the HFC ${DIV[keep!].name} champion — and a ${statusName(pc.level).toLowerCase()}.`, 'ok'); }
-        }}>Confirm</Btn>
+          if (err) nav.toast(tx(err), 'err'); else { store.saveNow(); nav.toast(t('You are the HFC {div} champion — and a {status}.', { div: t(DIV[keep!].name), status: t(statusName(pc.level)).toLowerCase() }), 'ok'); }
+        }}>{t('Confirm')}</Btn>
       </div>
     </Modal>
   );

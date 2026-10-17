@@ -18,7 +18,7 @@ import { inbox } from './core';
 import { rankings } from './world';
 import { fighterName } from './fighterGen';
 import { DIV, DIVISIONS, ORG } from '../data/world';
-import type { AttrKey } from './attributes';
+import { ATTR_BY_KEY, type AttrKey } from './attributes';
 import type { DivisionId, GameState, OrgId } from './types';
 
 export const SUPER_ORG: OrgId = 'acl';
@@ -138,7 +138,7 @@ export function chooseBelt(st: GameState, keep: DivisionId, boost: AttrKey): str
   (p.superBoosts ??= []).push({ key: boost, amt, day: st.day, level: pc.level });
   p.popularity = clamp(p.popularity + (pc.level === 2 ? 10 : 5), 0, 100);
   p.reputation = clamp(p.reputation + (pc.level === 2 ? 10 : 5), 0, 100);
-  addTimeline(st, 'milestone', `Chose to defend the ${DIV[keep].name} belt; vacated ${DIV[drop].name}. ${statusName(pc.level)} bonus: +${amt} ${boost}.`);
+  addTimeline(st, 'milestone', `Chose to defend the ${DIV[keep].name} belt; vacated ${DIV[drop].name}. ${statusName(pc.level)} bonus: +${amt} ${ATTR_BY_KEY[boost]?.name ?? boost}.`);
   p.pendingBeltChoice = null;
   return null;
 }

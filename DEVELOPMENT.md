@@ -1,5 +1,43 @@
 # Development checklist
 
+## Update 17 Oct 2026 (4) — v1.3.0: French translation
+- **How it works** (`src/i18n/`): the English text is the key.
+  - `t(text, vars)` translates UI text with `{placeholders}`; `tp(one, many, n)` handles plurals (French uses the
+    singular for 0 and 1); `tn(text, nodes)` (rich.tsx) puts React nodes such as key caps into a translated sentence.
+  - `fr.ts` holds about 2,750 entries: UI strings, game data (divisions, styles, sessions, injuries, sponsors,
+    attributes, achievements, look options…), and patterns for text the game generates.
+  - `tx(text)` translates generated English text when it is shown: news, inbox, timeline, ledger, events, offers,
+    results, commentary, announcer, interviews, fight log. Saves keep English, so existing careers read in French and
+    switching language never touches a save.
+    - Order: exact entry (case-insensitive for lower-cased names), then patterns (most fixed text first), then
+      sentence by sentence, then list items, then dates and money ("12 Mar 2027" → "12 mars 2027", "$1,234" →
+      "1 234 $").
+    - Placeholders are typed so patterns cannot swallow other text: numbers (`n`, `m`, `pct`, `kg`…), division
+      names (`div`, `div2`…), promotion codes (`org`), methods (`method`), records (`rec`) and people's names
+      (`name`, `opp`, `a`, `b`, `player`…), which are copied as they are.
+  - Stored text uses fixed English formats (`fmtDateEn`, `moneyEn`); the UI formats with `locale()`.
+- **Language choice:** `Settings.lang`, unset = the system language (`detectLang`). Picker on the title screen and in
+  Settings; the app remounts in the new language. Weekday names, dates and money come from `Intl`. The spoken
+  announcer uses a French voice.
+- **Release notes:** `CHANGELOG.fr.md` mirrors CHANGELOG.md. "What's new" shows the French notes in French, and the
+  release workflow publishes `release-notes-fr.md`, which the updater (from 1.3.0) shows in the update prompt.
+- **Code changes outside the UI:** the canvas HUD in `combat/renderer.ts` (display only; the engine is unchanged),
+  poster text built in `poster.ts`, a few generated sentences now use names instead of ids (division, background,
+  boost attribute).
+- **Tests:** `tests/i18n.test.ts` (6 tests):
+  - placeholders match in every entry;
+  - every literal UI string in the source has French (about 1,100 keys);
+  - every game-data name and description has French;
+  - a 5-year career with real fights, events, contracts, commentary and interviews: all ~1,980 distinct generated
+    strings are covered;
+  - French notes exist for the current version;
+  - `t`/`tp`/`tx` switch with the language.
+
+  Full suite: 18 files, 66 tests.
+- **Browser (French, fr-FR locale):** title, career creation, every hub tab, admin, 9 months of fast-forward (news,
+  inbox, offers), quick fight HUD, tactical pause, a career fight night (card, walkout, cage) and the results screen
+  are all in French, with no console errors.
+
 ## Update 17 Oct 2026 (3) — v1.2.0 "Living world"
 - `src/game/living.ts` runs from the monthly career tick. Fighters booked against the player (offers, booking, card,
   pending events) are never touched.

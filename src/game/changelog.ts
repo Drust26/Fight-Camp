@@ -1,5 +1,7 @@
 // Release notes, read from CHANGELOG.md at build time (the same text as the GitHub releases).
 import raw from '../../CHANGELOG.md?raw';
+import rawFr from '../../CHANGELOG.fr.md?raw';
+import { getLang } from '../i18n';
 
 export interface ReleaseNotes { version: string; items: string[] }
 
@@ -24,8 +26,15 @@ const cmp = (a: string, b: string) => {
 };
 
 export const CHANGELOG = parseChangelog(raw);
+const CHANGELOG_FR = parseChangelog(rawFr);
+
+/** The changelog in the game's language: each version's French notes when they exist, the English otherwise. */
+export function localChangelog(): ReleaseNotes[] {
+  if (getLang() !== 'fr') return CHANGELOG;
+  return CHANGELOG.map((r) => CHANGELOG_FR.find((x) => x.version === r.version) ?? r);
+}
 
 /** Notes for every version after `seen`, up to and including `current` (newest first). */
-export function notesSince(seen: string | null, current: string, all = CHANGELOG): ReleaseNotes[] {
+export function notesSince(seen: string | null, current: string, all = localChangelog()): ReleaseNotes[] {
   return all.filter((r) => cmp(r.version, current) <= 0 && (!seen || cmp(r.version, seen) > 0));
 }

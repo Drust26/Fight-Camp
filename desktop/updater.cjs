@@ -53,6 +53,16 @@ async function expectedHash(release, asset) {
   return (await r.text()).trim().split(/\s+/)[0].toLowerCase();
 }
 
+/** Translated release notes, published next to the installer as release-notes-<lang>.md (optional). */
+async function localNotes(release, lang) {
+  const a = (release.assets || []).find((x) => x.name === `release-notes-${lang}.md`);
+  if (!a) return undefined;
+  try {
+    const r = await net.fetch(a.browser_download_url, { headers: { 'User-Agent': 'FightCamp-Updater' } });
+    return r.ok ? (await r.text()).slice(0, 3000) : undefined;
+  } catch { return undefined; }
+}
+
 async function download(url, dest, size, onProgress) {
   const r = await net.fetch(url, { headers: { 'User-Agent': 'FightCamp-Updater' } });
   if (!r.ok || !r.body) throw new Error(`Download failed (${r.status})`);
@@ -93,8 +103,9 @@ async function check() {
     if (!asset) { set({ status: 'none', latest: version }); return; }
     const sha = await expectedHash(rel, asset);
     if (!sha) throw new Error('The release has no checksum, so the download cannot be verified');
-    const notes = String(rel.body || '').slice(0, 1500);
-    set({ status: 'downloading', version, notes, progress: 0, total: asset.size || 0 });
+    const notes = String(rel.body || '').slice(0, 3000);
+    const notesFr = await localNotes(rel, 'fr');
+    set({ status: 'downloading', version, notes, notesFr, progress: 0, total: asset.size || 0 });
     fs.mkdirSync(DIR, { recursive: true });
     const dest = path.join(DIR, asset.name);
     if (fs.existsSync(dest) && crypto.createHash('sha256').update(fs.readFileSync(dest)).digest('hex') === sha) {

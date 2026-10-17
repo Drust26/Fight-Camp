@@ -1,5 +1,6 @@
 // Fight posters: the data a poster needs, for upcoming bookings and for past fights.
 // Design tier follows the importance of the bout: local show → card bout → headliner → title fight → superfight.
+import { t } from '../i18n';
 import { DIV, ORG } from '../data/world';
 import { eventKind } from './eventcard';
 import { nameOf } from './history';
@@ -37,11 +38,14 @@ export function posterTier(m: { amateur: boolean; org: OrgId; title: boolean; su
 }
 
 function tagline(id: string, tier: PosterTier, m: { rematch?: number; rivalry?: boolean; vacant?: boolean }, divName: string): string {
+  return t(taglineEn(id, tier, m, divName), { div: t(divName).toUpperCase() });
+}
+function taglineEn(id: string, tier: PosterTier, m: { rematch?: number; rivalry?: boolean; vacant?: boolean }, divName: string): string {
   if (tier === 'superfight') return pick(id, ['CHAMPION VS CHAMPION', 'TWO KINGS. ONE CAGE.', 'GREATNESS HAS NO WEIGHT LIMIT']);
   if ((m.rematch ?? 0) >= 2) return 'THE TRILOGY';
   if ((m.rematch ?? 0) === 1) return pick(id, ['THE REMATCH', 'UNFINISHED BUSINESS', 'NO MORE DOUBTS']);
   if (m.rivalry) return pick(id, ['BAD BLOOD', 'SETTLE THE SCORE', 'NOTHING TO LOSE']);
-  if (tier === 'title') return m.vacant ? pick(id, ['A NEW KING WILL BE CROWNED', 'THE THRONE IS EMPTY']) : pick(id, ['HEAVY IS THE HEAD', 'THE CROWN IS ON THE LINE', 'ONE BELT. NO EXCUSES.', `${divName.toUpperCase()} SUPREMACY`]);
+  if (tier === 'title') return m.vacant ? pick(id, ['A NEW KING WILL BE CROWNED', 'THE THRONE IS EMPTY']) : pick(id, ['HEAVY IS THE HEAD', 'THE CROWN IS ON THE LINE', 'ONE BELT. NO EXCUSES.', '{div} SUPREMACY']);
   if (tier === 'headliner') return pick(id, ['COLLISION COURSE', 'NO WAY BACK', 'STAND AND DELIVER', 'ALL OR NOTHING']);
   if (tier === 'local') return pick(id, ['LIVE · LOCAL · LOUD', 'FIGHT NIGHT', 'HOMETOWN WAR', 'TICKETS AT THE DOOR']);
   return pick(id, ['FIGHT NIGHT', 'THE CLIMB CONTINUES', 'ONE STEP CLOSER']);
@@ -80,7 +84,9 @@ function oppSide(st: GameState, id: string, name: string, rec: string, nick: str
 }
 
 function titleLine(org: OrgId, div: DivisionId, vacant?: boolean, superfight?: boolean) {
-  return `${vacant ? 'FOR THE VACANT ' : 'FOR THE '}${ORG[org].short} ${DIV[div].name.toUpperCase()} ${ORG[org].tier >= 4 ? 'WORLD ' : ''}CHAMPIONSHIP${superfight ? '' : ''}`;
+  void superfight;
+  const key = ORG[org].tier >= 4 ? (vacant ? 'FOR THE VACANT {org} {div} WORLD CHAMPIONSHIP' : 'FOR THE {org} {div} WORLD CHAMPIONSHIP') : (vacant ? 'FOR THE VACANT {org} {div} CHAMPIONSHIP' : 'FOR THE {org} {div} CHAMPIONSHIP');
+  return t(key, { org: ORG[org].short, div: t(DIV[div].name).toUpperCase() });
 }
 
 /** Poster for the booked (upcoming) fight. */
@@ -93,8 +99,8 @@ export function posterForScheduled(st: GameState, sc: ScheduledFight): PosterDat
   const homeChamp = !!sc.superfight || m.champion === 'player';
   return {
     id: sc.id, tier, eventName: sc.eventName, org: sc.orgId, orgName: sc.amateur ? 'Amateur Showcase' : ORG[sc.orgId].name, orgShort: sc.amateur ? 'AM' : ORG[sc.orgId].short, orgColor: ORG[sc.orgId].color,
-    date: fmtDate(sc.day, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), venue: VENUE[eventKind(sc)],
-    div, divName: DIV[div].name, lbs: DIV[div].lb, rounds: sc.rounds, slotLabel: SLOT_LABEL[m.slot ?? 'prelim'],
+    date: fmtDate(sc.day, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), venue: t(VENUE[eventKind(sc)]),
+    div, divName: t(DIV[div].name), lbs: DIV[div].lb, rounds: sc.rounds, slotLabel: t(SLOT_LABEL[m.slot ?? 'prelim']),
     titleLine: sc.title ? titleLine(sc.orgId, div, m.vacant, sc.superfight) : null, homeDiv: m.homeDiv, vacant: m.vacant,
     tagline: tagline(sc.id, tier, m, DIV[div].name),
     red: playerSide(st, m.myRec ?? '', homeChamp), blue: oppSide(st, sc.opponentId, opp ? `${opp.first} ${opp.last}` : 'Opponent', opp ? recStr(opp.rec) : '', m.oppNick ?? '', m.oppNat ?? '', m.champion === 'opponent' || !!sc.invader),
@@ -122,18 +128,18 @@ export function posterForHistory(st: GameState, h: FightHistoryEntry): PosterDat
   const w = before.filter((x) => x.result === 'W').length, l = before.filter((x) => x.result === 'L').length, d = before.filter((x) => x.result === 'D').length;
   const myRec = m.myRec ?? `${w}-${l}${d ? '-' + d : ''}`;
   const tier = posterTier({ amateur: h.amateur, org: h.orgId, title: h.title, superfight: m.superfight || !!m.invader, slot: m.slot ?? (h.title ? 'mainevent' : undefined), rivalry: m.rivalry, rematch: m.rematch });
-  const venue = VENUE[m.kind ?? eventKind({ amateur: h.amateur, orgId: h.orgId, title: h.title })];
+  const venue = t(VENUE[m.kind ?? eventKind({ amateur: h.amateur, orgId: h.orgId, title: h.title })]);
   const won = h.result === 'W' ? true : h.result === 'L' ? false : null;
   return {
     id: h.id, tier, eventName: h.event, org: h.orgId, orgName: h.amateur ? 'Amateur Showcase' : ORG[h.orgId].name, orgShort: h.amateur ? 'AM' : ORG[h.orgId].short, orgColor: ORG[h.orgId].color,
     date: fmtDate(h.day, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), venue,
-    div, divName: DIV[div].name, lbs: DIV[div].lb, rounds: m.rounds ?? (h.title ? 5 : 3), slotLabel: SLOT_LABEL[m.slot ?? (h.title ? 'mainevent' : 'prelim')],
+    div, divName: t(DIV[div].name), lbs: DIV[div].lb, rounds: m.rounds ?? (h.title ? 5 : 3), slotLabel: t(SLOT_LABEL[m.slot ?? (h.title ? 'mainevent' : 'prelim')]),
     titleLine: h.title ? titleLine(h.orgId, div, m.vacant, m.superfight) : null, homeDiv: m.homeDiv, vacant: m.vacant,
     tagline: tagline(h.id, tier, m, DIV[div].name),
     red: playerSide(st, myRec, !!m.superfight || m.champion === 'player'),
     blue: oppSide(st, h.opponentId, h.opponentName, m.oppRec ?? h.opponentRecord, m.oppNick ?? '', m.oppNat ?? '', m.champion === 'opponent' || !!m.invader, div, m.oppHeight),
     invader: m.invader,
     undercard: m.undercard ?? [],
-    result: { text: `${h.result === 'W' ? 'WON' : h.result === 'L' ? 'LOST' : 'DRAW'} · ${h.method}${['UD', 'SD', 'MD', 'DRAW'].includes(h.method) ? '' : ` R${h.round} ${h.time}`}`, won },
+    result: { text: `${t(h.result === 'W' ? 'WON' : h.result === 'L' ? 'LOST' : 'DRAW')} · ${t(h.method)}${['UD', 'SD', 'MD', 'DRAW'].includes(h.method) ? '' : ` R${h.round} ${h.time}`}`, won },
   };
 }

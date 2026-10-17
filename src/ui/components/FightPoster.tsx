@@ -7,6 +7,7 @@ import { NationBadge } from './common';
 import { drawPosterFighter } from '../../combat/fighterArt';
 import { DIV } from '../../data/world';
 import type { PosterData, PosterSide } from '../../game/poster';
+import { t, tx } from '../../i18n';
 
 const W = 600, H = 840;
 
@@ -38,7 +39,7 @@ function Name({ side, align, champLabel }: { side: PosterSide; align: 'left' | '
         {align === 'right' && <span>{side.rec}</span>}
         <NationBadge nation={side.nat} size={13} />
         {align === 'left' && <span>{side.rec}</span>}
-        {side.champion && <span className="pf-champ">{champLabel ?? 'CHAMPION'}</span>}
+        {side.champion && <span className="pf-champ">{champLabel ?? t('CHAMPION')}</span>}
       </div>
     </div>
   );
@@ -49,26 +50,26 @@ export function FightPoster({ data, width = 300 }: { data: PosterData; width?: n
   const d = data;
   return (
     <div style={{ width, height: H * k, flexShrink: 0 }} className="pf-wrap">
-      <div className={`pf pf-t-${d.tier}`} style={{ transform: `scale(${k})`, ['--org' as any]: d.orgColor }} role="img" aria-label={`Fight poster: ${d.red.first} ${d.red.last} vs ${d.blue.first} ${d.blue.last}, ${d.eventName}`}>
+      <div className={`pf pf-t-${d.tier}`} style={{ transform: `scale(${k})`, ['--org' as any]: d.orgColor }} role="img" aria-label={t('Fight poster: {a} vs {b}, {event}', { a: `${d.red.first} ${d.red.last}`, b: `${d.blue.first} ${d.blue.last}`, event: tx(d.eventName) })}>
         <div className="pf-bg" />
-        {d.tier === 'superfight' && <div className="pf-bigword">SUPERFIGHT</div>}
-        {d.tier === 'title' && <div className="pf-bigword gold">CHAMPIONSHIP</div>}
+        {d.tier === 'superfight' && <div className="pf-bigword">{t('SUPERFIGHT')}</div>}
+        {d.tier === 'title' && <div className="pf-bigword gold">{t('CHAMPIONSHIP')}</div>}
         <div className="pf-top">
-          <div className="pf-org" style={d.orgName.length > 22 ? { letterSpacing: '.24em', fontSize: 14 } : undefined}>{d.orgName.toUpperCase()}{d.tier !== 'local' ? ' PRESENTS' : ''}</div>
-          <div className="pf-event" style={{ fontSize: Math.min(54, Math.round(860 / Math.max(10, d.eventName.length))) }}>{d.eventName}</div>
+          <div className="pf-org" style={d.orgName.length > 22 ? { letterSpacing: '.24em', fontSize: 14 } : undefined}>{d.tier !== 'local' ? t('{org} PRESENTS', { org: d.orgName.toUpperCase() }) : d.orgName.toUpperCase()}</div>
+          <div className="pf-event" style={{ fontSize: Math.min(54, Math.round(860 / Math.max(10, d.eventName.length))) }}>{tx(d.eventName)}</div>
           <div className="pf-tag">{d.tagline}</div>
         </div>
         <FighterCanvas side={d.red} tier={d.tier} />
         <FighterCanvas side={d.blue} mirror tier={d.tier} />
         <div className="pf-vs">VS</div>
-        <Name side={d.red} align="left" champLabel={d.invader ? `${ABBR[d.div] ?? ''} CHAMPION` : d.tier === 'superfight' && d.homeDiv ? `${ABBR[d.homeDiv] ?? ''} CHAMPION` : undefined} />
-        <Name side={d.blue} align="right" champLabel={d.invader ? `${ABBR[d.invader] ?? ''} CHAMPION` : d.tier === 'superfight' ? `${ABBR[d.div] ?? ''} CHAMPION` : undefined} />
+        <Name side={d.red} align="left" champLabel={d.invader ? t('{div} CHAMPION', { div: t(ABBR[d.div] ?? '') }) : d.tier === 'superfight' && d.homeDiv ? t('{div} CHAMPION', { div: t(ABBR[d.homeDiv] ?? '') }) : undefined} />
+        <Name side={d.blue} align="right" champLabel={d.invader ? t('{div} CHAMPION', { div: t(ABBR[d.invader] ?? '') }) : d.tier === 'superfight' ? t('{div} CHAMPION', { div: t(ABBR[d.div] ?? '') }) : undefined} />
         {(d.tier === 'title' || d.tier === 'superfight') && (
           <div className="pf-belts">
             {d.invader
-              ? <><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{d.divName.toUpperCase()} · AT STAKE</span></div><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{DIV[d.invader].name.toUpperCase()} · HIS BELT</span></div></>
+              ? <><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{d.divName.toUpperCase()} · {t('AT STAKE')}</span></div><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{t(DIV[d.invader].name).toUpperCase()} · {t('HIS BELT')}</span></div></>
               : d.tier === 'superfight' && d.homeDiv
-              ? <><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{DIV[d.homeDiv].name.toUpperCase()} · HELD</span></div><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{d.divName.toUpperCase()} · AT STAKE</span></div></>
+              ? <><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{t(DIV[d.homeDiv].name).toUpperCase()} · {t('HELD')}</span></div><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{d.divName.toUpperCase()} · {t('AT STAKE')}</span></div></>
               : <Belt org={d.org} width={180} />}
           </div>
         )}
@@ -76,11 +77,11 @@ export function FightPoster({ data, width = 300 }: { data: PosterData; width?: n
         <div className="pf-bottom">
           <div className="pf-slot">{d.slotLabel}</div>
           <div className="pf-info">{d.date.toUpperCase()}</div>
-          <div className="pf-info dim">{d.venue.toUpperCase()} · {d.divName.toUpperCase()} · {d.lbs} LBS · {d.rounds} ROUNDS</div>
-          {d.undercard.length > 0 && <div className="pf-under">ALSO ON THE CARD: {d.undercard.join(' · ').toUpperCase()}</div>}
+          <div className="pf-info dim">{d.venue.toUpperCase()} · {d.divName.toUpperCase()} · {t('{n} LBS · {r} ROUNDS', { n: d.lbs, r: d.rounds })}</div>
+          {d.undercard.length > 0 && <div className="pf-under">{t('ALSO ON THE CARD:')} {d.undercard.map((u) => tx(u)).join(' · ').toUpperCase()}</div>}
         </div>
         {d.result && <div className={`pf-stamp ${d.result.won === true ? 'win' : d.result.won === false ? 'loss' : 'draw'}`}>{d.result.text}</div>}
-        {d.tier === 'local' && <div className="pf-ticket">ADMIT ONE · DOORS 6PM · CASH AT THE DOOR</div>}
+        {d.tier === 'local' && <div className="pf-ticket">{t('ADMIT ONE · DOORS 6PM · CASH AT THE DOOR')}</div>}
       </div>
     </div>
   );
@@ -91,7 +92,7 @@ export function PosterThumb({ data, width = 120, label }: { data: PosterData; wi
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className="pf-thumb" onClick={() => setOpen(true)} title="View fight poster" aria-label={`View poster for ${data.eventName}`}>
+      <button className="pf-thumb" onClick={() => setOpen(true)} title={t('View fight poster')} aria-label={t('View poster for {event}', { event: tx(data.eventName) })}>
         <FightPoster data={data} width={width} />
         {label && <span className="tiny">{label}</span>}
       </button>
@@ -100,11 +101,11 @@ export function PosterThumb({ data, width = 120, label }: { data: PosterData; wi
   );
 }
 
-export function PosterButton({ data, label = 'Poster' }: { data: PosterData; label?: string }) {
+export function PosterButton({ data, label }: { data: PosterData; label?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className="chip" onClick={(e) => { e.stopPropagation(); setOpen(true); }} title="View fight poster"><ImageIcon size={12} style={{ verticalAlign: -2 }} /> {label}</button>
+      <button className="chip" onClick={(e) => { e.stopPropagation(); setOpen(true); }} title={t('View fight poster')}><ImageIcon size={12} style={{ verticalAlign: -2 }} /> {label ?? t('Poster')}</button>
       {open && <PosterViewer data={data} onClose={() => setOpen(false)} />}
     </>
   );
@@ -121,7 +122,7 @@ export function PosterViewer({ data, onClose }: { data: PosterData; onClose: () 
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onClick={(e) => e.stopPropagation()}>
       <div className="col" style={{ alignItems: 'center', gap: 10 }}>
         <FightPoster data={data} width={w} />
-        <button className="btn sm" onClick={onClose}><X size={14} /> Close</button>
+        <button className="btn sm" onClick={onClose}><X size={14} /> {t('Close')}</button>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { locale, t, weekdayShort } from '../../../i18n';
 import { CalendarDays, ChevronLeft, ChevronRight, ListChecks } from 'lucide-react';
 import { Btn } from '../../components/common';
 import { useGame } from '../../../game/store';
@@ -27,16 +28,16 @@ export function CalendarTab() {
   for (let i = 0; i < daysIn; i++) {
     const day = first + i;
     const items: { t: string; c: string }[] = [];
-    if (st.scheduled?.day === day) items.push({ t: `FIGHT: ${st.world.fighters[st.scheduled.opponentId] ? st.world.fighters[st.scheduled.opponentId].last : ''}`, c: 'f' });
-    if (st.scheduled && st.scheduled.day - 1 === day) items.push({ t: 'Weigh-ins / media', c: 'w' });
-    for (const o of st.offers) if (o.day === day) items.push({ t: `Offer: ${st.world.fighters[o.opponentId]?.last ?? ''}?`, c: '' });
-    if (dateOf(day).getUTCDate() === 1) items.push({ t: `Bills ${money(monthlyTotal(st))}`, c: '' });
-    if (orgEvents.has(day) && day >= st.day) items.push({ t: `${ORG[p.orgId].short} event`, c: '' });
-    if (p.medicalSuspensionUntil === day) items.push({ t: 'Cleared to fight', c: 'w' });
-    for (const inj of p.injuries) if (Math.round(st.day + inj.daysLeft) === day) items.push({ t: `${INJURIES[inj.type].name} healed`, c: 'w' });
+    if (st.scheduled?.day === day) items.push({ t: t('FIGHT: {name}', { name: st.world.fighters[st.scheduled.opponentId] ? st.world.fighters[st.scheduled.opponentId].last : '' }), c: 'f' });
+    if (st.scheduled && st.scheduled.day - 1 === day) items.push({ t: t('Weigh-ins / media'), c: 'w' });
+    for (const o of st.offers) if (o.day === day) items.push({ t: t('Offer: {name}?', { name: st.world.fighters[o.opponentId]?.last ?? '' }), c: '' });
+    if (dateOf(day).getUTCDate() === 1) items.push({ t: t('Bills {amount}', { amount: money(monthlyTotal(st)) }), c: '' });
+    if (orgEvents.has(day) && day >= st.day) items.push({ t: t('{org} event', { org: ORG[p.orgId].short }), c: '' });
+    if (p.medicalSuspensionUntil === day) items.push({ t: t('Cleared to fight'), c: 'w' });
+    for (const inj of p.injuries) if (Math.round(st.day + inj.daysLeft) === day) items.push({ t: t('{injury} healed', { injury: t(INJURIES[inj.type].name) }), c: 'w' });
     if (day >= st.day && !items.length) {
       const plan = st.plan.days[weekday(day)].filter(Boolean) as string[];
-      if (plan.length) items.push({ t: plan.map((x) => SESSION[x]?.name.split(' ')[0]).join(' + '), c: '' });
+      if (plan.length) items.push({ t: plan.map((x) => t(SESSION[x]?.name ?? x).split(' ')[0]).join(' + '), c: '' });
     }
     cells.push(
       <div key={day} className={`d ${day < st.day ? 'past' : ''} ${day === st.day ? 'today' : ''} ${st.scheduled?.day === day ? 'fight' : ''}`}>
@@ -48,37 +49,37 @@ export function CalendarTab() {
   const obligations: { day: number; t: string }[] = [];
   if (st.scheduled) {
     const o = st.world.fighters[st.scheduled.opponentId];
-    obligations.push({ day: st.scheduled.day - 1, t: 'Weigh-ins (automatic at fight morning)' });
-    obligations.push({ day: st.scheduled.day, t: `Fight vs ${o ? fighterName(o) : '?'} — ${st.scheduled.eventName}` });
+    obligations.push({ day: st.scheduled.day - 1, t: t('Weigh-ins (automatic at fight morning)') });
+    obligations.push({ day: st.scheduled.day, t: t('Fight vs {name} — {event}', { name: o ? fighterName(o) : '?', event: st.scheduled.eventName }) });
   }
-  for (let d = st.day + 1; d < st.day + 60; d++) if (dateOf(d).getUTCDate() === 1) { obligations.push({ day: d, t: `Monthly bills: ${money(monthlyTotal(st))}` }); break; }
-  for (const o of st.offers) obligations.push({ day: o.expiresDay, t: `Offer expires: vs ${st.world.fighters[o.opponentId] ? fighterName(st.world.fighters[o.opponentId]) : '?'}` });
-  for (const c of st.contractOffers) obligations.push({ day: c.expiresDay, t: `${ORG[c.orgId].short} contract offer expires` });
-  if (p.medicalSuspensionUntil > st.day) obligations.push({ day: p.medicalSuspensionUntil, t: 'Medical suspension ends' });
+  for (let d = st.day + 1; d < st.day + 60; d++) if (dateOf(d).getUTCDate() === 1) { obligations.push({ day: d, t: t('Monthly bills: {amount}', { amount: money(monthlyTotal(st)) }) }); break; }
+  for (const o of st.offers) obligations.push({ day: o.expiresDay, t: t('Offer expires: vs {name}', { name: st.world.fighters[o.opponentId] ? fighterName(st.world.fighters[o.opponentId]) : '?' }) });
+  for (const c of st.contractOffers) obligations.push({ day: c.expiresDay, t: t('{org} contract offer expires', { org: ORG[c.orgId].short }) });
+  if (p.medicalSuspensionUntil > st.day) obligations.push({ day: p.medicalSuspensionUntil, t: t('Medical suspension ends') });
   obligations.sort((a, b) => a.day - b.day);
 
   return (
     <div className="col" style={{ gap: 16 }}>
-      <div className="page-head"><div><h1>Calendar</h1><div className="sub">Today is {fmtDate(st.day, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}.</div></div></div>
+      <div className="page-head"><div><h1>{t('Calendar')}</h1><div className="sub">{t('Today is {date}.', { date: fmtDate(st.day, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) })}</div></div></div>
       <div className="grid3" style={{ alignItems: 'start' }}>
         <div className="panel" style={{ gridColumn: 'span 2' }}>
           <div className="panel-title">
-            <h3><CalendarDays size={16} /> {month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })}</h3>
-            <div className="row"><Btn size="sm" onClick={() => setOffset(offset - 1)} aria-label="Previous month"><ChevronLeft size={14} /></Btn><Btn size="sm" onClick={() => setOffset(0)}>Today</Btn><Btn size="sm" onClick={() => setOffset(offset + 1)} aria-label="Next month"><ChevronRight size={14} /></Btn></div>
+            <h3><CalendarDays size={16} /> {month.toLocaleDateString(locale(), { month: 'long', year: 'numeric', timeZone: 'UTC' })}</h3>
+            <div className="row"><Btn size="sm" onClick={() => setOffset(offset - 1)} aria-label={t('Previous month')}><ChevronLeft size={14} /></Btn><Btn size="sm" onClick={() => setOffset(0)}>{t('Today')}</Btn><Btn size="sm" onClick={() => setOffset(offset + 1)} aria-label={t('Next month')}><ChevronRight size={14} /></Btn></div>
           </div>
           <div className="cal">
-            {DAY_NAMES.map((d) => <div key={d} className="tiny dim" style={{ textAlign: 'center', fontWeight: 600 }}>{d}</div>)}
+            {DAY_NAMES.map((d, i) => <div key={d} className="tiny dim" style={{ textAlign: 'center', fontWeight: 600 }}>{weekdayShort(i)}</div>)}
             {cells}
           </div>
         </div>
         <div className="panel">
-          <div className="panel-title"><h3><ListChecks size={16} /> Upcoming</h3></div>
+          <div className="panel-title"><h3><ListChecks size={16} /> {t('Upcoming')}</h3></div>
           {obligations.length ? obligations.map((o, i) => (
             <div key={i} className="row small" style={{ padding: '6px 0', borderBottom: '1px solid var(--line)', alignItems: 'flex-start' }}>
               <span className="muted" style={{ width: 70, flexShrink: 0 }}>{fmtDate(o.day, { day: 'numeric', month: 'short' })}</span>
-              <span>{o.t} <span className="dim">({o.day - st.day}d)</span></span>
+              <span>{o.t} <span className="dim">({t('{n}d', { n: o.day - st.day })})</span></span>
             </div>
-          )) : <div className="muted small">Nothing scheduled.</div>}
+          )) : <div className="muted small">{t('Nothing scheduled.')}</div>}
         </div>
       </div>
     </div>

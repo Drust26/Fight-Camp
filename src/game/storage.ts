@@ -28,6 +28,7 @@ export interface UpdateState {
   version?: string;
   latest?: string;
   notes?: string;
+  notesFr?: string;
   progress?: number;
   received?: number;
   total?: number;

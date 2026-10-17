@@ -2,7 +2,7 @@ import { endReign, VACATE } from './reigns';
 import { SHORTS_COLORS } from '../data/world';
 // Contracts & negotiation, sponsors, gyms/coaches and lifestyle spending.
 import { RNG, clamp, uid } from './rng';
-import { ORG, ORGS } from '../data/world';
+import { DIV, ORG, ORGS } from '../data/world';
 import { GYM, LIFESTYLE, SPONSOR, SPONSORS } from '../data/training';
 import { overallRating } from './attributes';
 import { inbox, ledger, withRng } from './core';
@@ -174,7 +174,7 @@ export function signContract(st: GameState, offerId: string): string | null {
   st.bidRounds = undefined;
   inbox(st, 'offer', `Signed with ${ORG[off.orgId].short}`, `${off.fights} fights at ${off.purse.toLocaleString()} + ${off.winBonus.toLocaleString()} win bonus.`);
   addTimeline(st, 'contract', `${moving ? 'Signed with' : 'Re-signed with'} the ${ORG[off.orgId].name}: ${off.fights} fights at ${off.purse.toLocaleString()}/${off.winBonus.toLocaleString()}.`);
-  if (moving && ORG[off.orgId].tier >= 3) addNews(st, { kind: 'signing', title: `${p.firstName} ${p.lastName} signs with the ${ORG[off.orgId].short}`, body: `${p.record.w}-${p.record.l} ${p.divisionId} fighter inks a ${off.fights}-fight deal.`, refs: ['player'], org: off.orgId, div: p.divisionId, imp: 2 });
+  if (moving && ORG[off.orgId].tier >= 3) addNews(st, { kind: 'signing', title: `${p.firstName} ${p.lastName} signs with the ${ORG[off.orgId].short}`, body: `${p.record.w}-${p.record.l} ${DIV[p.divisionId].name} fighter inks a ${off.fights}-fight deal.`, refs: ['player'], org: off.orgId, div: p.divisionId, imp: 2 });
   return null;
 }
 

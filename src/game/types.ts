@@ -386,6 +386,7 @@ export interface Settings {
   announcerVoice?: boolean;
   uiScale?: number;
   music?: number;
+  lang?: 'en' | 'fr'; // unset = follow the system language
 }
 
 export interface GameState {

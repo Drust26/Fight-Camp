@@ -1,4 +1,5 @@
 import { badgeFor } from '../../data/nations';
+import { t } from '../../i18n';
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { resolveLook, type Look } from '../../game/look';
 import { drawPortrait } from '../../combat/fighterArt';
@@ -45,7 +46,7 @@ export function Modal({ children, onClose, wide, xl, title }: { children: React.
         {(title || onClose) && (
           <div className="row between" style={{ marginBottom: 12 }}>
             {title ? <h2>{title}</h2> : <span />}
-            {onClose && <button className="btn ghost sm" onClick={onClose} aria-label="Close"><X size={16} /></button>}
+            {onClose && <button className="btn ghost sm" onClick={onClose} aria-label={t('Close')}><X size={16} /></button>}
           </div>
         )}
         {children}
@@ -59,7 +60,7 @@ export function Confirm({ title, body, confirm, danger, onYes, onNo }: { title: 
     <Modal onClose={onNo} title={title}>
       <div className="muted" style={{ marginBottom: 18 }}>{body}</div>
       <div className="row" style={{ justifyContent: 'flex-end' }}>
-        <button className="btn" onClick={onNo}>Cancel</button>
+        <button className="btn" onClick={onNo}>{t('Cancel')}</button>
         <button className={`btn ${danger ? 'danger' : 'primary'}`} onClick={onYes}>{confirm}</button>
       </div>
     </Modal>
@@ -83,10 +84,10 @@ export function attrColor(v: number) {
 export function AttrRow({ k, value, gain, base }: { k: AttrKey; value: number; gain?: number; base?: number }) {
   const def = ATTR_BY_KEY[k];
   return (
-    <div className="attr-row tip" data-tip={`${def.name}: ${def.effect}`}>
+    <div className="attr-row tip" data-tip={`${t(def.name)}: ${t(def.effect)}`}>
       <div>
         <div className="name">
-          <span>{def.name}</span>
+          <span>{t(def.name)}</span>
           {gain && gain >= 0.05 ? <span className="gain">+{gain.toFixed(1)}</span> : null}
           {base !== undefined && Math.round(base) !== Math.round(value) ? <span className="red tiny">({Math.round(value - base)})</span> : null}
         </div>
@@ -153,10 +154,10 @@ export function ErrorView({ error, onReset }: { error: Error; onReset: () => voi
   return (
     <div style={{ height: 'var(--app-h, 100vh)', display: 'grid', placeItems: 'center', padding: 30 }}>
       <div className="panel" style={{ maxWidth: 560 }}>
-        <h2 className="accent">Something broke</h2>
-        <p className="muted">The game hit an unexpected error. Your last autosave is safe in its slot.</p>
+        <h2 className="accent">{t('Something broke')}</h2>
+        <p className="muted">{t('The game hit an unexpected error. Your last autosave is safe in its slot.')}</p>
         <pre className="small" style={{ whiteSpace: 'pre-wrap', background: '#000', padding: 10, borderRadius: 8, maxHeight: 200, overflow: 'auto' }}>{error.message}</pre>
-        <button className="btn primary" onClick={onReset}>Return to title</button>
+        <button className="btn primary" onClick={onReset}>{t('Return to title')}</button>
       </div>
     </div>
   );
@@ -194,7 +195,7 @@ export function NationBadge({ nation, size = 14 }: { nation: string; size?: numb
   const b = badgeFor(nation);
   const w = size * 1.5;
   return (
-    <span title={nation} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, verticalAlign: 'middle' }}>
+    <span title={t(nation)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, verticalAlign: 'middle' }}>
       <span style={{ display: 'inline-flex', flexDirection: b.dir === 'h' ? 'column' : 'row', width: w, height: size, borderRadius: 2, overflow: 'hidden', boxShadow: '0 0 0 1px rgba(255,255,255,.18)' }}>
         {b.colors.map((c, i) => <span key={i} style={{ flex: 1, background: c }} />)}
       </span>

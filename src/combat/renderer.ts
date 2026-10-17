@@ -7,6 +7,7 @@ import { drawFighterArt, setArtLite, type Joints } from './fighterArt';
 import { FighterAnimator, reactTo, stanceFor } from './animator';
 import { resolveLook, type Look } from '../game/look';
 import type { FighterSetup } from './engine';
+import { t, tx as trx } from '../i18n';
 
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; color: string; size: number }
 interface Popup { text: string; x: number; y: number; life: number; color: string; big: boolean }
@@ -103,8 +104,8 @@ export class FightRenderer {
       if (e.type === 'td' && f) { const p = this.fighterScreen(s, f.idx); this.popup('TAKEDOWN', p.x, p.y - 150 * this.sc(), '#facc15', true); this.shake = Math.max(this.shake, 6); }
       if (e.type === 'sprawl' && f) { const p = this.fighterScreen(s, f.idx); this.popup('SPRAWL', p.x, p.y - 160 * this.sc(), '#7dd3fc', true); }
       if (e.type === 'stun' && f) { const p = this.fighterScreen(s, f.idx); this.popup('HURT!', p.x, p.y - 200 * this.sc(), '#ff7a59', true); }
-      if (e.type === 'pos' && f && e.big) this.popup(POS_NAME[s.pos].toUpperCase(), this.W / 2, this.H * 0.28, '#facc15', true);
-      if (e.type === 'sub') this.popup(e.text?.split(/locks up an? /)[1]?.replace('!', '').toUpperCase() ?? 'SUBMISSION', this.W / 2, this.H * 0.26, '#f472b6', true);
+      if (e.type === 'pos' && f && e.big) this.popup(t(POS_NAME[s.pos]).toUpperCase(), this.W / 2, this.H * 0.28, '#facc15', true);
+      if (e.type === 'sub') this.popup(s.sub ? t(SUB_NAME[s.sub.kind]).toUpperCase() : e.text?.split(/locks up an? /)[1]?.replace('!', '').toUpperCase() ?? 'SUBMISSION', this.W / 2, this.H * 0.26, '#f472b6', true);
     }
   }
 
@@ -116,6 +117,7 @@ export class FightRenderer {
     }
   }
   private popup(text: string, x: number, y: number, color: string, big: boolean) {
+    text = trx(text);
     this.popups.push({ text, x, y, life: big ? 1.3 : 0.7, color, big });
     if (this.popups.length > 8) this.popups.shift();
   }
@@ -319,7 +321,7 @@ export class FightRenderer {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(this.theme.matText, 0, 0);
-      if (this.theme.gold) { ctx.font = `600 ${16 * sc}px Inter, sans-serif`; ctx.fillStyle = 'rgba(250,204,21,0.35)'; ctx.fillText('WORLD CHAMPIONSHIP', 0, 44 * sc); }
+      if (this.theme.gold) { ctx.font = `600 ${16 * sc}px Inter, sans-serif`; ctx.fillStyle = 'rgba(250,204,21,0.35)'; ctx.fillText(t('WORLD CHAMPIONSHIP'), 0, 44 * sc); }
       ctx.restore();
     }
     // fence segments
@@ -545,6 +547,7 @@ export class FightRenderer {
     } else if (o.state === 'shoot') { label = '⇣ SHOT! (R / Space)'; col = '#f472b6'; }
     else if (o.state === 'grapple' && o.attempt) { label = 'GRAPPLE! (Q / F to defend)'; col = '#f472b6'; }
     if (!label) return;
+    label = t(label);
     const p = this.fighterScreen(s, o.idx);
     const y = p.y - 215 * this.sc();
     ctx.font = '700 14px Oswald, Impact, sans-serif';
@@ -582,7 +585,7 @@ export class FightRenderer {
     ctx.font = '600 11px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = zone.c;
-    ctx.fillText(`RANGE: ${zone.l}`, W / 2, y - 8);
+    ctx.fillText(t('RANGE: {zone}', { zone: t(zone.l) }), W / 2, y - 8);
     ctx.globalAlpha = 1;
   }
 
@@ -627,13 +630,13 @@ export class FightRenderer {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#9aa3b2';
     ctx.font = '600 11px Inter, sans-serif';
-    ctx.fillText(`ROUND ${s.round} OF ${s.cfg.rounds}`, W / 2, 27);
+    ctx.fillText(t('ROUND {n} OF {m}', { n: s.round, m: s.cfg.rounds }), W / 2, 27);
     ctx.fillStyle = '#fff';
     ctx.font = '700 28px Oswald, Impact, sans-serif';
     ctx.fillText(clockString(s), W / 2, 56);
     ctx.fillStyle = '#facc15';
     ctx.font = '600 11px Inter, sans-serif';
-    ctx.fillText(s.sub ? SUB_NAME[s.sub.kind].toUpperCase() : POS_NAME[s.pos].toUpperCase() + (s.top >= 0 && s.pos !== 'standing' ? ` · ${s.f[s.top].setup.short} ${s.pos === 'clinch' ? 'controls' : 'on top'}` : ''), W / 2, 92);
+    ctx.fillText(s.sub ? t(SUB_NAME[s.sub.kind]).toUpperCase() : t(POS_NAME[s.pos]).toUpperCase() + (s.top >= 0 && s.pos !== 'standing' ? ' · ' + t(s.pos === 'clinch' ? '{name} controls' : '{name} on top', { name: trx(s.f[s.top].setup.short) }) : ''), W / 2, 92);
     // round momentum
     const a = roundImpact(L.rounds[s.round - 1] ?? ({} as any), { ws: 1, wg: 1 }) || 0;
     const b = roundImpact(R.rounds[s.round - 1] ?? ({} as any), { ws: 1, wg: 1 }) || 0;
@@ -647,7 +650,7 @@ export class FightRenderer {
     ctx.fillRect(W / 2 - mw / 2 + mw * (a / tot), my, mw * (b / tot), 4);
     ctx.fillStyle = '#9aa3b2';
     ctx.font = '500 9px Inter, sans-serif';
-    ctx.fillText('ROUND MOMENTUM', W / 2, my + 15);
+    ctx.fillText(t('ROUND MOMENTUM'), W / 2, my + 15);
   }
 
   private fighterPanel(f: CF, x: number, y: number, w: number, side: 'left' | 'right', s: FightState) {
@@ -661,10 +664,10 @@ export class FightRenderer {
     ctx.textAlign = side;
     ctx.fillStyle = '#fff';
     ctx.font = '700 17px Oswald, Impact, sans-serif';
-    ctx.fillText(f.setup.name.toUpperCase(), tx, y + 24);
+    ctx.fillText(trx(f.setup.name).toUpperCase(), tx, y + 24);
     ctx.fillStyle = '#9aa3b2';
     ctx.font = '500 11px Inter, sans-serif';
-    ctx.fillText(`${f.setup.record ?? ''}  ·  ${f.setup.stance}`, tx, y + 39);
+    ctx.fillText(`${trx(f.setup.record ?? '')}  ·  ${t(f.setup.stance)}`, tx, y + 39);
     // stamina
     const bx = x + 14, bw = w - 28 - 70;
     const sx = side === 'left' ? bx : x + 14 + 70;
@@ -679,14 +682,14 @@ export class FightRenderer {
     ctx.fillStyle = '#cbd5e1';
     ctx.font = '600 9px Inter, sans-serif';
     ctx.textAlign = side;
-    ctx.fillText('STAMINA', side === 'left' ? sx : sx + bw, y + 72);
+    ctx.fillText(t('STAMINA'), side === 'left' ? sx : sx + bw, y + 72);
     // damage silhouette (head/body/legs)
     const dx = side === 'left' ? x + w - 52 : x + 22;
     const col = (v: number) => `hsl(${Math.max(0, 120 - v * 1.2)}, 75%, ${v > 85 ? 45 : 50}%)`;
     ctx.fillStyle = col(f.head); ctx.beginPath(); ctx.arc(dx + 15, y + 22, 7, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = col(f.body); roundRect(ctx, dx + 7, y + 31, 16, 22, 4); ctx.fill();
     ctx.fillStyle = col(f.legs); ctx.fillRect(dx + 8, y + 55, 6, 22); ctx.fillRect(dx + 16, y + 55, 6, 22);
-    if (f.state === 'stun') { ctx.fillStyle = '#ff7a59'; ctx.font = '700 10px Inter'; ctx.textAlign = 'center'; ctx.fillText('HURT', dx + 15, y + 9); }
+    if (f.state === 'stun') { ctx.fillStyle = '#ff7a59'; ctx.font = '700 10px Inter'; ctx.textAlign = 'center'; ctx.fillText(t('HURT'), dx + 15, y + 9); }
     void T; void s;
   }
 
@@ -701,7 +704,7 @@ export class FightRenderer {
     ctx.textAlign = 'center';
     ctx.fillStyle = attacking ? '#f472b6' : '#ff5a36';
     ctx.font = '700 18px Oswald, Impact, sans-serif';
-    ctx.fillText(attacking ? `${SUB_NAME[sub.kind].toUpperCase()} — FINISH IT!` : `${SUB_NAME[sub.kind].toUpperCase()} — DEFEND!`, W / 2, y - 30);
+    ctx.fillText(`${t(SUB_NAME[sub.kind]).toUpperCase()} — ${attacking ? t('FINISH IT!') : t('DEFEND!')}`, W / 2, y - 30);
     // timing bar
     const zw = subZoneWidth(me, attacking);
     ctx.fillStyle = 'rgba(255,255,255,0.1)';
@@ -715,17 +718,17 @@ export class FightRenderer {
     ctx.font = '600 11px Inter, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillStyle = '#f472b6';
-    ctx.fillText(`LOCK ${Math.round(sub.lock)}%`, x, y + 30);
+    ctx.fillText(t('LOCK {n}%', { n: Math.round(sub.lock) }), x, y + 30);
     ctx.fillStyle = 'rgba(244,114,182,0.25)'; ctx.fillRect(x, y + 36, w / 2 - 10, 6);
     ctx.fillStyle = '#f472b6'; ctx.fillRect(x, y + 36, (w / 2 - 10) * Math.min(1, sub.lock / 100), 6);
     ctx.textAlign = 'right';
     ctx.fillStyle = '#22c55e';
-    ctx.fillText(`ESCAPE ${Math.round(sub.escape)}%`, x + w, y + 30);
+    ctx.fillText(t('ESCAPE {n}%', { n: Math.round(sub.escape) }), x + w, y + 30);
     ctx.fillStyle = 'rgba(34,197,94,0.25)'; ctx.fillRect(x + w / 2 + 10, y + 36, w / 2 - 10, 6);
     ctx.fillStyle = '#22c55e'; ctx.fillRect(x + w / 2 + 10, y + 36, (w / 2 - 10) * Math.min(1, sub.escape / 100), 6);
     ctx.textAlign = 'center';
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillText(attacking ? 'Press G (or F) while the marker is in the pink zone' : 'Press SPACE (or F) while the marker is in the green zone', W / 2, y + 52);
+    ctx.fillText(attacking ? t('Press G (or F) while the marker is in the pink zone') : t('Press SPACE (or F) while the marker is in the green zone'), W / 2, y + 52);
   }
 }
 

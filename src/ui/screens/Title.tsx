@@ -13,6 +13,8 @@ import { genAttrs } from '../../game/fighterGen';
 import { RNG } from '../../game/rng';
 import type { StyleId } from '../../game/types';
 import { STYLE } from '../../data/world';
+import { t } from '../../i18n';
+import { LanguagePicker } from '../components/LanguagePicker';
 
 function demoFight(seed: number) {
   const rng = new RNG(seed);
@@ -20,7 +22,7 @@ function demoFight(seed: number) {
   const mk = (i: number) => {
     const style = rng.pick(styles);
     return {
-      name: i ? 'Blue Corner' : 'Red Corner', short: i ? 'Blue' : 'Red', attrs: genAttrs(rng, 65, style), heightCm: 180, reachCm: 184, stance: 'orthodox' as const,
+      name: i ? t('Blue Corner') : t('Red Corner'), short: i ? t('Blue') : t('Red'), attrs: genAttrs(rng, 65, style), heightCm: 180, reachCm: 184, stance: 'orthodox' as const,
       style, plan: STYLE[style].plan, isPlayer: false,
       appearance: { skin: rng.int(0, 6), hair: rng.int(0, 5), hairColor: rng.int(0, 6), facialHair: rng.int(0, 3), shorts: i ? 1 : 0, gloves: i ? 2 : 0, accessory: rng.int(0, 3) },
     };
@@ -45,9 +47,9 @@ export function TitleScreen() {
     r.resize();
     let demo = demoFight(Date.now() & 0xffff);
     let raf = 0, lastT = performance.now(), acc = 0;
-    const loop = (t: number) => {
-      const dt = Math.min(0.05, (t - lastT) / 1000);
-      lastT = t;
+    const loop = (now: number) => {
+      const dt = Math.min(0.05, (now - lastT) / 1000);
+      lastT = now;
       acc += dt;
       while (acc >= 1 / 60) {
         acc -= 1 / 60;
@@ -86,22 +88,23 @@ export function TitleScreen() {
             <span className="l2">Camp</span>
           </div>
         </div>
-        <span className="logo-tagline">MMA CAREER SIMULATOR</span>
+        <span className="logo-tagline">{t('MMA CAREER SIMULATOR')}</span>
         <div className="menu">
           {cont?.state && (
             <Btn variant="primary" onClick={continueCareer}>
-              <Play size={18} /> Continue
+              <Play size={18} /> {t('Continue')}
               <span className="small" style={{ marginLeft: 'auto', fontFamily: 'var(--body)', textTransform: 'none', letterSpacing: 0, opacity: 0.85 }}>{cont.info.name} · {cont.info.record}</span>
             </Btn>
           )}
-          <Btn variant={cont?.state ? '' : 'primary'} onClick={() => nav.go('new')}><Plus size={18} /> New Career</Btn>
-          <Btn onClick={() => nav.go('load')} disabled={!hasAny}><FolderOpen size={18} /> Load Career</Btn>
-          <Btn onClick={() => nav.go('quick')}><Swords size={18} /> Quick Fight</Btn>
-          <Btn onClick={() => nav.go('practice')}><GraduationCap size={18} /> Practice Arena</Btn>
-          <Btn onClick={() => nav.go('settings')}><Cog size={18} /> Settings</Btn>
-          <Btn variant="ghost" onClick={() => nav.go('credits')}><Info size={18} /> Credits</Btn>
+          <Btn variant={cont?.state ? '' : 'primary'} onClick={() => nav.go('new')}><Plus size={18} /> {t('New Career')}</Btn>
+          <Btn onClick={() => nav.go('load')} disabled={!hasAny}><FolderOpen size={18} /> {t('Load Career')}</Btn>
+          <Btn onClick={() => nav.go('quick')}><Swords size={18} /> {t('Quick Fight')}</Btn>
+          <Btn onClick={() => nav.go('practice')}><GraduationCap size={18} /> {t('Practice Arena')}</Btn>
+          <Btn onClick={() => nav.go('settings')}><Cog size={18} /> {t('Settings')}</Btn>
+          <Btn variant="ghost" onClick={() => nav.go('credits')}><Info size={18} /> {t('Credits')}</Btn>
         </div>
-        <div className="tiny dim">All organisations, fighters and brands are fictional. v{__APP_VERSION__} · {native ? `Saves: ${native.savesDir()}` : 'Saves stay in this browser.'}</div>
+        <LanguagePicker compact />
+        <div className="tiny dim">{t('All organisations, fighters and brands are fictional.')} v{__APP_VERSION__} · {native ? t('Saves: {dir}', { dir: native.savesDir() }) : t('Saves stay in this browser.')}</div>
       </div>
       <div className="title-art">
         <canvas ref={canvas} />
@@ -116,15 +119,15 @@ export function CreditsScreen() {
   return (
     <div style={{ height: 'var(--app-h, 100vh)', display: 'grid', placeItems: 'center', padding: 24 }}>
       <div className="panel hero" style={{ maxWidth: 620 }}>
-        <h1 style={{ marginBottom: 10 }}>Credits</h1>
-        <p className="muted">Fight Camp: MMA Career Simulator — an original browser game.</p>
+        <h1 style={{ marginBottom: 10 }}>{t('Credits')}</h1>
+        <p className="muted">{t('Fight Camp: MMA Career Simulator — an original browser game.')}</p>
         <ul className="muted" style={{ lineHeight: 1.8 }}>
-          <li>Design, code, combat simulation and AI: built for this project.</li>
-          <li>All promotions (Hexagon Fighting Championship, Global Fight Championship, Continental MMA Series, Rising Fighters League, Independent Fight Circuit), fighters, gyms and sponsors are fictional.</li>
-          <li>Graphics: procedurally drawn on canvas/SVG. Audio: synthesized live with the Web Audio API.</li>
-          <li>Icons: Lucide (ISC licence). Fonts: Oswald &amp; Inter (SIL Open Font Licence), with system fallbacks offline.</li>
+          <li>{t('Design, code, combat simulation and AI: built for this project.')}</li>
+          <li>{t('All promotions (Hexagon Fighting Championship, Global Fight Championship, Continental MMA Series, Rising Fighters League, Independent Fight Circuit), fighters, gyms and sponsors are fictional.')}</li>
+          <li>{t('Graphics: procedurally drawn on canvas/SVG. Audio: synthesized live with the Web Audio API.')}</li>
+          <li>{t('Icons: Lucide (ISC licence). Fonts: Oswald & Inter (SIL Open Font Licence), with system fallbacks offline.')}</li>
         </ul>
-        <Btn variant="primary" onClick={() => nav.go('title')}>Back</Btn>
+        <Btn variant="primary" onClick={() => nav.go('title')}>{t('Back')}</Btn>
       </div>
     </div>
   );

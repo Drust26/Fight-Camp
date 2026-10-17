@@ -8,6 +8,7 @@ import { DIV, ORG } from '../../data/world';
 import { fmtDate } from '../../game/core';
 import { posterForHistory } from '../../game/poster';
 import type { DivisionId, FightHistoryEntry, GameState, OrgId, Reign } from '../../game/types';
+import { t, tp, tx } from '../../i18n';
 
 const HOW: Record<Reign['how'], string> = {
   won: 'Won the title',
@@ -21,14 +22,14 @@ const dt = (d: number) => fmtDate(d, { day: 'numeric', month: 'short', year: 'nu
 
 function FightRow({ st, h, label, icon, tone }: { st: GameState; h: FightHistoryEntry; label: string; icon: React.ReactNode; tone: string }) {
   const res = h.result === 'W' ? 'Won' : h.result === 'L' ? 'Lost' : 'Draw';
-  const how = ['UD', 'SD', 'MD', 'DRAW'].includes(h.method) ? h.method : `${h.method} · R${h.round} ${h.time}`;
+  const how = ['UD', 'SD', 'MD', 'DRAW'].includes(h.method) ? t(h.method) : `${t(h.method)} · R${h.round} ${h.time}`;
   return (
     <div className="bh-row">
       <div className={`bh-dot ${tone}`}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="small"><b>{label}</b> <span className="dim">· {dt(h.day)}</span></div>
-        <div className="small">{res} vs <b>{h.opponentName}</b> <span className="dim">({h.opponentRecord})</span> — {how}</div>
-        <div className="tiny dim">{h.event}{h.bonuses.length ? ` · ${h.bonuses.join(', ')}` : ''}</div>
+        <div className="small"><b>{t(label)}</b> <span className="dim">· {dt(h.day)}</span></div>
+        <div className="small">{t(res === 'Won' ? 'Won vs' : res === 'Lost' ? 'Lost vs' : 'Draw vs')} <b>{h.opponentName}</b> <span className="dim">({h.opponentRecord})</span> — {how}</div>
+        <div className="tiny dim">{tx(h.event)}{h.bonuses.length ? ` · ${h.bonuses.map((b) => tx(b)).join(', ')}` : ''}</div>
       </div>
       <PosterButton data={posterForHistory(st, h)} />
     </div>
@@ -40,7 +41,7 @@ function NoteRow({ label, sub, icon, tone }: { label: string; sub?: string; icon
     <div className="bh-row">
       <div className={`bh-dot ${tone}`}>{icon}</div>
       <div style={{ flex: 1 }}>
-        <div className="small"><b>{label}</b></div>
+        <div className="small"><b>{t(label)}</b></div>
         {sub && <div className="tiny dim">{sub}</div>}
       </div>
     </div>
@@ -62,25 +63,25 @@ export function ReignCard({ st, r, n }: { st: GameState; r: Reign; n: number }) 
   return (
     <div className="bh-reign">
       <div className="row" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-        <b>Reign {n}</b>
-        <span className="tiny dim">{dt(r.start)} – {r.end ? dt(r.end.day) : 'present'} · {days} days · {r.defenses.length} defense{r.defenses.length === 1 ? '' : 's'}</span>
+        <b>{t('Reign {n}', { n })}</b>
+        <span className="tiny dim">{dt(r.start)} – {r.end ? dt(r.end.day) : t('present')} · {tp('{n} day', '{n} days', days)} · {tp('{n} defense', '{n} defenses', r.defenses.length)}</span>
       </div>
       <div className="bh-steps">
         {won
           ? <FightRow st={st} h={won} label={HOW[r.how]} icon={<Crown size={13} />} tone="gold" />
-          : <NoteRow label={HOW[r.how]} sub={`${dt(r.start)}${r.how === 'admin' ? '' : ' · fight details were not recorded'}`} icon={<Crown size={13} />} tone="gold" />}
+          : <NoteRow label={HOW[r.how]} sub={`${dt(r.start)}${r.how === 'admin' ? '' : ' · ' + t('fight details were not recorded')}`} icon={<Crown size={13} />} tone="gold" />}
         {steps.map((s) => s.draw
           ? <FightRow key={s.id} st={st} h={s.h} label="Drawn defense — title retained" icon={<Shield size={13} />} tone="dim" />
-          : <FightRow key={s.id} st={st} h={s.h} label={`Defense #${++def}`} icon={<Shield size={13} />} tone="green" />)}
+          : <FightRow key={s.id} st={st} h={s.h} label={t('Defense #{n}', { n: ++def })} icon={<Shield size={13} />} tone="green" />)}
         {r.end?.kind === 'lost' && (lostIn
           ? <FightRow st={st} h={lostIn} label="Lost the title" icon={<Swords size={13} />} tone="red" />
-          : <NoteRow label="Lost the title" sub={`${r.end.reason} · ${dt(r.end.day)}`} icon={<Swords size={13} />} tone="red" />)}
+          : <NoteRow label="Lost the title" sub={`${tx(r.end.reason)} · ${dt(r.end.day)}`} icon={<Swords size={13} />} tone="red" />)}
         {r.end && r.end.kind !== 'lost' && (
-          <NoteRow label={r.end.kind === 'stripped' ? 'Stripped of the title' : 'Vacated the title'} sub={`${r.end.reason} · ${dt(r.end.day)}`} icon={r.end.kind === 'stripped' ? <Flag size={13} /> : <DoorOpen size={13} />} tone={r.end.kind === 'stripped' ? 'red' : 'dim'} />
+          <NoteRow label={r.end.kind === 'stripped' ? 'Stripped of the title' : 'Vacated the title'} sub={`${tx(r.end.reason)} · ${dt(r.end.day)}`} icon={r.end.kind === 'stripped' ? <Flag size={13} /> : <DoorOpen size={13} />} tone={r.end.kind === 'stripped' ? 'red' : 'dim'} />
         )}
         {!r.end && (held
-          ? <NoteRow label="Current champion" sub={`Reign ongoing · ${days} days so far`} icon={<Crown size={13} />} tone="gold" />
-          : <NoteRow label="Title no longer held" sub="How the reign ended was not recorded" icon={<DoorOpen size={13} />} tone="dim" />)}
+          ? <NoteRow label="Current champion" sub={t('Reign ongoing · {n} days so far', { n: days })} icon={<Crown size={13} />} tone="gold" />
+          : <NoteRow label="Title no longer held" sub={t('How the reign ended was not recorded')} icon={<DoorOpen size={13} />} tone="dim" />)}
       </div>
     </div>
   );
@@ -89,19 +90,19 @@ export function ReignCard({ st, r, n }: { st: GameState; r: Reign; n: number }) 
 export function BeltHistoryModal({ st, org, div, onClose }: { st: GameState; org: OrgId; div: DivisionId; onClose: () => void }) {
   const reigns = (st.player.reigns ?? []).filter((r) => r.org === org && r.div === div).sort((a, b) => a.start - b.start);
   return (
-    <Modal onClose={onClose} wide title={`${ORG[org].short} ${DIV[div].name} championship`}>
+    <Modal onClose={onClose} wide title={t('{org} {div} championship', { org: ORG[org].short, div: t(DIV[div].name) })}>
       <div className="col" style={{ gap: 12 }}>
         <div className="row" style={{ gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Belt org={org} width={200} label={DIV[div].name} />
+          <Belt org={org} width={200} label={t(DIV[div].name)} />
           <div>
-            <div><b>{BELT_INFO[org].name}</b></div>
-            <div className="tiny dim">{ORG[org].name} · {DIV[div].name} ({DIV[div].lb} lbs)</div>
-            <div className="small" style={{ marginTop: 4 }}>{reigns.length} reign{reigns.length === 1 ? '' : 's'} · {(() => { const n = reigns.reduce((s, r) => s + r.defenses.length, 0); return `${n} successful defense${n === 1 ? '' : 's'}`; })()}</div>
+            <div><b>{t(BELT_INFO[org].name)}</b></div>
+            <div className="tiny dim">{ORG[org].name} · {t(DIV[div].name)} ({DIV[div].lb} lbs)</div>
+            <div className="small" style={{ marginTop: 4 }}>{tp('{n} reign', '{n} reigns', reigns.length)} · {(() => { const n = reigns.reduce((s, r) => s + r.defenses.length, 0); return tp('{n} successful defense', '{n} successful defenses', n); })()}</div>
           </div>
         </div>
         {reigns.length
           ? reigns.map((r, i) => <ReignCard key={r.id} st={st} r={r} n={i + 1} />)
-          : <div className="small muted">No reign records for this belt.</div>}
+          : <div className="small muted">{t('No reign records for this belt.')}</div>}
       </div>
     </Modal>
   );

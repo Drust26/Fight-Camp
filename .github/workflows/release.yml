@@ -91,7 +91,9 @@ jobs:
           cat "FightCamp-Setup-$VERSION.exe.sha256"
 
       - name: Release notes
-        run: node scripts/release-notes.cjs "$VERSION" > release-notes.md
+        run: |
+          node scripts/release-notes.cjs "$VERSION" > release-notes.md
+          node scripts/release-notes.cjs "$VERSION" --lang fr > release-notes-fr.md
 
       - name: Publish the release
         uses: softprops/action-gh-release@v2
@@ -103,3 +105,4 @@ jobs:
           files: |
             desktop/release/FightCamp-Setup-${{ env.VERSION }}.exe
             desktop/release/FightCamp-Setup-${{ env.VERSION }}.exe.sha256
+            release-notes-fr.md

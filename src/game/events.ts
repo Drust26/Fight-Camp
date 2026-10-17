@@ -1,12 +1,12 @@
 // Data-driven random events. Each has a condition, generated params, and choices with real state effects.
 import { RNG, clamp, uid } from './rng';
-import { inbox, ledger, withRng } from './core';
+import { inbox, ledger, money, withRng } from './core';
 import { fighterName, recStr } from './fighterGen';
 import { makeOffer } from './fights';
 import { addInjury } from './training';
 import { playerRank, rankings } from './world';
 import { turnPro } from './economy';
-import { ORG, STYLE } from '../data/world';
+import { DIV, ORG, STYLE } from '../data/world';
 import { SESSION } from '../data/training';
 import { categoryRatings, CATEGORY_DEFS } from './attributes';
 import type { GameState, OrgId, PendingEvent } from './types';
@@ -112,7 +112,7 @@ export const EVENTS: EventTemplate[] = [
     title: () => 'Short-notice fight!',
     body: (st, ev) => {
       const o = ev.params.offer; const f = st.world.fighters[o.opponentId];
-      return `A fighter withdrew injured. ${ORG[o.orgId as OrgId].short} offers you ${f ? fighterName(f) + ' (' + recStr(f.rec) + ', ' + STYLE[f.style].name + ')' : 'a replacement bout'} in ${o.day - st.day} days — ${o.purse.toLocaleString()} + ${o.winBonus.toLocaleString()} (40% above your usual pay). Almost no camp, and you'll have to cut weight fast.`;
+      return `A fighter withdrew injured. ${ORG[o.orgId as OrgId].short} offers you ${f ? fighterName(f) + ' (' + recStr(f.rec) + ', ' + STYLE[f.style].name + ')' : 'a replacement bout'} in ${o.day - st.day} days — ${money(o.purse)} + ${money(o.winBonus)} (40% above your usual pay). Almost no camp, and you'll have to cut weight fast.`;
     },
     choices: [
       { label: 'Decline', hint: 'Small promoter disappointment.', apply: (st) => { st.promoterRelation = clamp(st.promoterRelation - 1, -50, 50); return 'You passed. Someone else took it.'; } },
@@ -173,7 +173,7 @@ export const EVENTS: EventTemplate[] = [
       return st.player.isPro && !!champ && champ !== 'player' && r !== null && r <= 5 && !st.scheduled;
     },
     title: () => 'The champion is hurt',
-    body: (st) => `${ORG[st.player.orgId].short}'s ${st.player.divisionId} champion is out for months. The promoter is considering an interim title fight between top contenders — your name is on the list.`,
+    body: (st) => `${ORG[st.player.orgId].short}'s ${DIV[st.player.divisionId].name} champion is out for months. The promoter is considering an interim title fight between top contenders — your name is on the list.`,
     choices: [
       { label: 'Campaign for the interim shot', hint: 'Interim-title offer vs a top contender (5 rounds).', apply: (st, _ev, rng) => {
         const champId = st.world.orgs[st.player.orgId].champions[st.player.divisionId]!;
@@ -253,7 +253,7 @@ export const EVENTS: EventTemplate[] = [
     id: 'turnpro', weight: 0, cooldown: 0, expires: 30,
     when: () => false,
     title: () => 'Time to turn pro?',
-    body: (st) => `With an amateur record of ${st.player.amateurRecord.w}-${st.player.amateurRecord.l}, the IFC offers you a professional contract: 3 fights at ${ORG.ifc.purse}/${ORG.ifc.winBonus}. More amateur bouts build experience safely; going pro starts the real climb.`,
+    body: (st) => `With an amateur record of ${st.player.amateurRecord.w}-${st.player.amateurRecord.l}, the IFC offers you a professional contract: 3 fights at ${money(ORG.ifc.purse)}/${money(ORG.ifc.winBonus)}. More amateur bouts build experience safely; going pro starts the real climb.`,
     choices: [
       { label: 'Stay amateur for now', hint: 'You can turn pro later from Contracts.', apply: () => 'You\'ll keep sharpening in the amateurs.' },
       { label: 'Turn professional', hint: 'Pro record, purses, rankings.', disabled: (st) => (st.scheduled ? 'Finish your booked bout first' : null), apply: (st) => turnPro(st) ?? 'Welcome to the professional ranks.' },

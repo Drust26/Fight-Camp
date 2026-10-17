@@ -1,6 +1,7 @@
 // Championship belts — an original design per promotion, drawn as SVG (no external images).
 // IFC: steel plate on black leather · RFL: bronze shield with green enamel and laurels · CMS: silver globe medallion
 // on navy · GFC: gold octagon with violet gem and crown · HFC: grand gold hexagon with ruby stones on crimson leather.
+import { t } from '../../i18n';
 import { useId } from 'react';
 import type { OrgId } from '../../game/types';
 
@@ -26,7 +27,7 @@ export function Belt({ org, width = 320, label }: { org: OrgId; width?: number; 
   const edge = { ifc: '#2a2e36', rfl: '#5a3a24', cms: '#1d3a78', gfc: '#2d2338', acl: '#1a0405' }[org];
   const H = width * (150 / 360);
   return (
-    <svg width={width} height={H} viewBox="0 0 360 150" role="img" aria-label={`${BELT_INFO[org].name}${label ? ` — ${label}` : ''}`} style={{ display: 'block', flexShrink: 0 }}>
+    <svg width={width} height={H} viewBox="0 0 360 150" role="img" aria-label={`${t(BELT_INFO[org].name)}${label ? ` — ${label}` : ''}`} style={{ display: 'block', flexShrink: 0 }}>
       <defs>
         {(Object.keys(METAL) as Metal[]).map((m) => (
           <linearGradient key={m} id={`${uid}-${m}`} x1="0" y1="0" x2="0.35" y2="1">

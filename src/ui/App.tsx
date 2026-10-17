@@ -1,3 +1,4 @@
+import { detectLang, setLang } from '../i18n';
 import { UpdateNotice } from './components/UpdateNotice';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ErrorBoundary, NavCtx, Toasts, type Nav, type Screen, type Tab } from './components/common';
@@ -24,6 +25,8 @@ function uiStyle(screen: Screen, z: number): React.CSSProperties {
 export default function App() {
   useStoreVersion();
   const settings = useSettings();
+  const lang = settings.lang ?? detectLang();
+  setLang(lang);
   const [screen, setScreen] = useState<Screen>('title');
   const [tab, setTab] = useState<Tab>('overview');
   const [toasts, setToasts] = useState<{ id: number; msg: string; kind: string }[]>([]);
@@ -78,7 +81,7 @@ export default function App() {
   }
   return (
     <NavCtx.Provider value={nav}>
-      <div className={settings.reducedMotion ? 'reduced-motion' : ''} style={uiStyle(screen, settings.uiScale ?? 1)}>
+      <div key={lang} className={settings.reducedMotion ? 'reduced-motion' : ''} style={uiStyle(screen, settings.uiScale ?? 1)}>
         <ErrorBoundary onReset={() => setScreen('title')}>{view}</ErrorBoundary>
         <Toasts items={toasts} />
         <UpdateNotice />

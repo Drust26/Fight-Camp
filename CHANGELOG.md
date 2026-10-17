@@ -2,6 +2,14 @@
 
 Each version's section is the text of its GitHub release and of the in-game update prompt.
 
+## v1.3.0
+- The game is now available in French. It starts in your system's language; pick English or Français on the title
+  screen or in Settings, and everything switches at once.
+- Everything is translated: menus, training, offers, contracts, fight night, the fight screen and its commentary,
+  results, interviews, news, the inbox and your career timeline. Existing careers read in French too.
+- Dates and money follow the language (15 oct. 2027, 12 500 $), and the spoken announcer uses a French voice.
+- Release notes and "What's new" come in French as well.
+
 ## v1.2.0
 - Living world: AI fighters now change weight class: contenders stuck behind a champion, fighters on a losing streak
   and fighters the wrong size for their division move up or down. Each move is in the news and on the fighter's profile.

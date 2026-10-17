@@ -12,9 +12,10 @@ import { nameOf } from '../../game/history';
 import { DIV } from '../../data/world';
 import { SLOT_NAME } from '../../game/eventcard';
 import type { FightResultSummary, GameState } from '../../game/types';
+import { t, tx } from '../../i18n';
 
 export function Announcement({ r }: { r: FightResultSummary }) {
-  const lines = r.announce ?? [];
+  const lines = (r.announce ?? []).map((l) => tx(l));
   const [n, setN] = useState(lines.length ? 1 : 0);
   useEffect(() => {
     if (n >= lines.length) return;
@@ -25,11 +26,11 @@ export function Announcement({ r }: { r: FightResultSummary }) {
   if (!lines.length) return null;
   return (
     <div className="panel" style={{ marginTop: 18, textAlign: 'center' }}>
-      <div className="tiny dim" style={{ letterSpacing: '.25em', fontWeight: 700 }}><Megaphone size={12} style={{ verticalAlign: -2 }} /> THE OFFICIAL DECISION</div>
+      <div className="tiny dim" style={{ letterSpacing: '.25em', fontWeight: 700 }}><Megaphone size={12} style={{ verticalAlign: -2 }} /> {t('THE OFFICIAL DECISION')}</div>
       <div className="col" style={{ gap: 4, marginTop: 8 }}>
         {lines.slice(0, n).map((l, i) => <div key={i} style={{ fontFamily: 'var(--head)', fontSize: i === lines.length - 1 ? 26 : 17, letterSpacing: '.03em', animation: 'fade .4s' }}>{l}</div>)}
       </div>
-      {n < lines.length && <button className="chip" style={{ marginTop: 8 }} onClick={() => setN(lines.length)}>Show all</button>}
+      {n < lines.length && <button className="chip" style={{ marginTop: 8 }} onClick={() => setN(lines.length)}>{t('Show all')}</button>}
     </div>
   );
 }
@@ -40,17 +41,17 @@ export function Interview({ st, r }: { st: GameState; r: FightResultSummary }) {
   const chosen = r.interview ? opts.find((o) => o.id === r.interview) : null;
   return (
     <div className="panel">
-      <div className="panel-title"><h3><Mic size={16} /> Post-fight interview</h3><span className="tiny dim">One answer — it affects popularity, reputation, rivalries and matchmaking.</span></div>
+      <div className="panel-title"><h3><Mic size={16} /> {t('Post-fight interview')}</h3><span className="tiny dim">{t('One answer — it affects popularity, reputation, rivalries and matchmaking.')}</span></div>
       {chosen ? (
         <div>
-          <div style={{ fontStyle: 'italic' }}>"{chosen.quote}"</div>
-          {msg && <div className="small green" style={{ marginTop: 6 }}>{msg}</div>}
+          <div style={{ fontStyle: 'italic' }}>"{tx(chosen.quote)}"</div>
+          {msg && <div className="small green" style={{ marginTop: 6 }}>{tx(msg)}</div>}
         </div>
       ) : (
         <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
           {opts.map((o) => (
             <button key={o.id} className="pick" onClick={() => { const m = store.act((g) => (g.lastResult ? applyInterview(g, g.lastResult, o.id) : 'No result.')); setMsg(m ?? null); }}>
-              <b>{o.label}</b><span className="small" style={{ fontStyle: 'italic' }}>"{o.quote}"</span><span className="tiny accent">{o.effects}</span>
+              <b>{tx(o.label)}</b><span className="small" style={{ fontStyle: 'italic' }}>"{tx(o.quote)}"</span><span className="tiny accent">{tx(o.effects)}</span>
             </button>
           ))}
         </div>
@@ -66,15 +67,15 @@ export function RoundBreakdown({ r }: { r: FightResultSummary }) {
   if (!rounds.length) return null;
   return (
     <div className="panel">
-      <div className="panel-title"><h3><BarChart3 size={16} /> Round by round</h3><span className="tiny dim"><span className="accent">You</span> – <span className="blue">Opponent</span></span></div>
+      <div className="panel-title"><h3><BarChart3 size={16} /> {t('Round by round')}</h3><span className="tiny dim"><span className="accent">{t('You')}</span> – <span className="blue">{t('Opponent')}</span></span></div>
       <div style={{ overflowX: 'auto' }}>
         <table className="tbl">
           <thead><tr><th></th>{rounds.map((_, i) => <th key={i}>R{i + 1}</th>)}</tr></thead>
           <tbody>
             {ROWS.map(([k, l]) => (
-              <tr key={k}><td className="small">{l}</td>{rounds.map((x, i) => <td key={i} className="num small"><span className={x.p[k] > x.o[k] ? 'accent' : ''}>{x.p[k]}</span>–<span className={x.o[k] > x.p[k] ? 'blue' : ''}>{x.o[k]}</span></td>)}</tr>
+              <tr key={k}><td className="small">{t(l)}</td>{rounds.map((x, i) => <td key={i} className="num small"><span className={x.p[k] > x.o[k] ? 'accent' : ''}>{x.p[k]}</span>–<span className={x.o[k] > x.p[k] ? 'blue' : ''}>{x.o[k]}</span></td>)}</tr>
             ))}
-            <tr><td className="small">Edge</td>{rounds.map((x, i) => <td key={i} className="small"><b className={x.p.impact >= x.o.impact ? 'accent' : 'blue'}>{x.p.impact >= x.o.impact ? 'You' : 'Opp'}</b></td>)}</tr>
+            <tr><td className="small">{t('Edge')}</td>{rounds.map((x, i) => <td key={i} className="small"><b className={x.p.impact >= x.o.impact ? 'accent' : 'blue'}>{x.p.impact >= x.o.impact ? t('You') : t('Opp')}</b></td>)}</tr>
           </tbody>
         </table>
       </div>
@@ -84,15 +85,15 @@ export function RoundBreakdown({ r }: { r: FightResultSummary }) {
 }
 
 function Trends({ r }: { r: FightResultSummary }) {
-  const t = r.trends ?? [];
-  if (t.length < 3) return null;
-  const W = 520, H = 120, maxT = t[t.length - 1].t || 1;
-  const maxS = Math.max(5, ...t.map((x) => Math.max(x.ps, x.os)));
-  const pts = (f: (x: (typeof t)[number]) => number, max: number) => t.map((x) => `${(x.t / maxT) * W},${H - (f(x) / max) * (H - 8) - 4}`).join(' ');
+  const tr = r.trends ?? [];
+  if (tr.length < 3) return null;
+  const W = 520, H = 120, maxT = tr[tr.length - 1].t || 1;
+  const maxS = Math.max(5, ...tr.map((x) => Math.max(x.ps, x.os)));
+  const pts = (f: (x: (typeof tr)[number]) => number, max: number) => tr.map((x) => `${(x.t / maxT) * W},${H - (f(x) / max) * (H - 8) - 4}`).join(' ');
   return (
     <div style={{ marginTop: 14 }}>
-      <div className="tiny dim" style={{ marginBottom: 4 }}><Gauge size={11} style={{ verticalAlign: -1 }} /> Momentum: cumulative significant strikes (solid) and head damage taken (dashed)</div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 120, background: 'var(--bg2)', borderRadius: 8 }} role="img" aria-label="Fight momentum chart">
+      <div className="tiny dim" style={{ marginBottom: 4 }}><Gauge size={11} style={{ verticalAlign: -1 }} /> {t('Momentum: cumulative significant strikes (solid) and head damage taken (dashed)')}</div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 120, background: 'var(--bg2)', borderRadius: 8 }} role="img" aria-label={t('Fight momentum chart')}>
         <polyline points={pts((x) => x.ps, maxS)} fill="none" stroke="var(--accent)" strokeWidth="2.5" />
         <polyline points={pts((x) => x.os, maxS)} fill="none" stroke="var(--blue)" strokeWidth="2.5" />
         <polyline points={pts((x) => x.ph, 100)} fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.7" />
@@ -115,17 +116,17 @@ export function Highlights({ st, r }: { st: GameState; r: FightResultSummary }) 
   const name = (side: number) => (side === 0 ? st.player.lastName : r.opponentName.split(' ').slice(-1)[0]);
   return (
     <div className="panel">
-      <div className="panel-title"><h3><Film size={16} /> Highlights</h3>{!data && <span className="tiny dim">{r.timeline ? 'Replays unavailable (not stored for this fight)' : ''}</span>}</div>
-      {!list.length && <div className="small muted">A tactical fight without standout moments.</div>}
+      <div className="panel-title"><h3><Film size={16} /> {t('Highlights')}</h3>{!data && <span className="tiny dim">{r.timeline ? t('Replays unavailable (not stored for this fight)') : ''}</span>}</div>
+      {!list.length && <div className="small muted">{t('A tactical fight without standout moments.')}</div>}
       <div className="col" style={{ gap: 4 }}>
         {list.map((m, i) => (
           <div key={i} className="row between" style={{ padding: '5px 8px', background: 'var(--bg2)', borderRadius: 8 }}>
-            <div className="small"><span className="tiny dim num">R{m.round} {m.clock}</span> <b className={m.side === 0 ? 'accent' : 'blue'}>{m.side >= 0 ? name(m.side) : ''}</b> {VERB[m.kind] ?? m.kind}</div>
-            {data && <Btn size="sm" onClick={() => setWatch(m)}><Play size={12} /> Watch</Btn>}
+            <div className="small"><span className="tiny dim num">R{m.round} {m.clock}</span> <b className={m.side === 0 ? 'accent' : 'blue'}>{m.side >= 0 ? name(m.side) : ''}</b> {t(VERB[m.kind] ?? m.kind)}</div>
+            {data && <Btn size="sm" onClick={() => setWatch(m)}><Play size={12} /> {t('Watch')}</Btn>}
           </div>
         ))}
       </div>
-      {watch && data && <ReplayViewer data={data} m={watch} title={`R${watch.round} ${watch.clock} — ${KIND_LABEL[watch.kind] ?? watch.kind}`} onClose={() => setWatch(null)} />}
+      {watch && data && <ReplayViewer data={data} m={watch} title={`R${watch.round} ${watch.clock} — ${t(KIND_LABEL[watch.kind] ?? watch.kind)}`} onClose={() => setWatch(null)} />}
     </div>
   );
 }
@@ -144,9 +145,9 @@ function ReplayViewer({ data, m, title, onClose }: { data: ReplayData; m: Moment
     replayTo(sim, m.tick - 180);
     const end = m.tick + 150;
     let raf = 0, last = performance.now(), acc = 0;
-    const loop = (t: number) => {
-      const dt = Math.min(0.1, (t - last) / 1000) * (slow ? 0.4 : 1);
-      last = t;
+    const loop = (now: number) => {
+      const dt = Math.min(0.1, (now - last) / 1000) * (slow ? 0.4 : 1);
+      last = now;
       acc += dt;
       while (acc >= 1 / 60 && (sim.fight.tick ?? 0) < end) {
         acc -= 1 / 60;
@@ -164,14 +165,14 @@ function ReplayViewer({ data, m, title, onClose }: { data: ReplayData; m: Moment
     return () => cancelAnimationFrame(raf);
   }, [run, slow]);
   return (
-    <Modal title={`Replay · ${title}`} onClose={onClose} wide>
+    <Modal title={`${t('Replay')} · ${title}`} onClose={onClose} wide>
       <canvas ref={ref} style={{ width: '100%', height: 380, display: 'block', borderRadius: 10, background: '#07080c' }} />
       <div className="row between" style={{ marginTop: 10 }}>
-        <span className="tiny dim">Re-simulated from the recorded fight — the exact same exchange.</span>
+        <span className="tiny dim">{t('Re-simulated from the recorded fight — the exact same exchange.')}</span>
         <div className="row">
-          <Btn size="sm" onClick={() => setSlow((x) => !x)}>{slow ? 'Normal speed' : 'Slow motion'}</Btn>
-          <Btn size="sm" onClick={() => setRun((x) => x + 1)}><Play size={12} /> Again</Btn>
-          <Btn size="sm" onClick={onClose}><X size={12} /> Close</Btn>
+          <Btn size="sm" onClick={() => setSlow((x) => !x)}>{slow ? t('Normal speed') : t('Slow motion')}</Btn>
+          <Btn size="sm" onClick={() => setRun((x) => x + 1)}><Play size={12} /> {t('Again')}</Btn>
+          <Btn size="sm" onClick={onClose}><X size={12} /> {t('Close')}</Btn>
         </div>
       </div>
     </Modal>
@@ -183,17 +184,17 @@ export function CardResults({ st, r }: { st: GameState; r: FightResultSummary })
   if (card.length <= 1) return null;
   return (
     <div className="panel">
-      <div className="panel-title"><h3><Swords size={16} /> {r.eventName} — full results</h3></div>
+      <div className="panel-title"><h3><Swords size={16} /> {t('{event} — full results', { event: tx(r.eventName) })}</h3></div>
       {card.map((c) => {
         const res = c.result;
         const w = res && res.w !== -1 ? (res.w === 0 ? c.a : c.b) : null;
         const l = w ? (w === c.a ? c.b : c.a) : null;
         return (
           <div key={c.id} className="row between small" style={{ padding: '5px 8px', borderRadius: 8, background: c.player ? 'var(--accentDim)' : 'var(--bg2)', marginBottom: 3 }}>
-            <span>{c.title && <Trophy size={12} className="gold" style={{ verticalAlign: -1 }} />} {res && res.r === 0 ? <span className="muted">{nameOf(st, c.a)} vs {nameOf(st, c.b)} — {res.note}</span>
-              : w ? <><b>{nameOf(st, w)}</b> def. {nameOf(st, l!)}</> : <>{nameOf(st, c.a)} drew with {nameOf(st, c.b)}</>}
-              <span className="tiny dim"> · {SLOT_NAME[c.slot]} · {DIV[c.div].name}</span></span>
-            <span className="tiny">{res && res.r > 0 ? `${res.m} R${res.r}` : ''}{res?.note && res.r > 0 ? <b className="gold"> · {res.note}</b> : null}</span>
+            <span>{c.title && <Trophy size={12} className="gold" style={{ verticalAlign: -1 }} />} {res && res.r === 0 ? <span className="muted">{nameOf(st, c.a)} {t('vs')} {nameOf(st, c.b)} — {tx(res.note)}</span>
+              : w ? <><b>{nameOf(st, w)}</b> {t('def.')} {nameOf(st, l!)}</> : <>{t('{a} drew with {b}', { a: nameOf(st, c.a), b: nameOf(st, c.b) })}</>}
+              <span className="tiny dim"> · {t(SLOT_NAME[c.slot])} · {t(DIV[c.div].name)}</span></span>
+            <span className="tiny">{res && res.r > 0 ? `${t(res.m)} R${res.r}` : ''}{res?.note && res.r > 0 ? <b className="gold"> · {tx(res.note)}</b> : null}</span>
           </div>
         );
       })}
