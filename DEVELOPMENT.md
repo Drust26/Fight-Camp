@@ -1,5 +1,54 @@
 # Development checklist
 
+## Update 17 Oct 2026 (3) — v1.2.0 "Living world"
+- `src/game/living.ts` runs from the monthly career tick. Fighters booked against the player (offers, booking, card,
+  pending events) are never touched.
+  - `moveDivisions`: at most 3 moves a month worldwide, at most one per promotion and division, and only from rosters
+    of 6 or more. A fighter moves again only after 18 months. Triggers:
+    - 2+ title-fight losses in 3 years, including one to the current champion, while ranked top 5 (10%/month);
+    - three straight losses (4%);
+    - 7+ cm taller or shorter than the division average (1.5%).
+
+    The ranking points carried over are ×0.65 + 4. Moves are news in tier 3+ promotions or in the player's division;
+    otherwise they only appear on the fighter's profile (`f.mv`).
+  - `aiSuperfights`: an AI HFC champion with 3 straight defenses (`rdf`, counted in recordBout) fights the next
+    division's champion, or its top contender if the title is vacant. One a month at most, with a 1-year cooldown
+    (`sfx`) and a 30% chance each month. If the next division's champion is the player, it becomes an offer instead.
+  - `resolveDoubleChamps`: double champions (`dbl`) hold both belts for at least 120 days, then keep one (55% the
+    new division) and vacate the other. A champion whose only belt is in another division moves there. Retired
+    belt holders are cleared.
+  - `poachStars` (quarterly): contenders and former champions of tier 2+ promotions sign with a rival of the same
+    tier or one up (up to 3 a quarter). Rarely a champion leaves and vacates.
+  - `invaderFor`, used by generateOffers, turns the next division's champion into a "champion vs champion"
+    title-defense offer for the player (`FightOffer.invader`, 1.3× purse).
+    - If the player loses, the opponent holds both belts.
+    - The poster uses the superfight design with "AT STAKE" and "HIS BELT" belts.
+- `world.bout()` takes the title's division (a double champion defends a belt outside his own weight class).
+  - `rankings()` lists a double champion at the top of both divisions.
+  - `vacateAllBelts` is used on retirement and by the admin "Retire" tool.
+- **Bidding war** (`economy.ts`): an in-demand free agent gets offers from their promotion and up to two rivals at once.
+  - "In demand" means champion, top 5, popularity 45+ or leverage 60+.
+  - Each offer has a hidden ceiling of 1.15–1.45× its first purse; a lower-tier rival adds a 25% premium.
+  - `letThemBid`: up to 3 rounds; each round tries to top the best offer. A promotion stuck far behind drops out.
+  - No side offers come while the war runs; signing ends it.
+- **UI:**
+  - News kinds "Weight-class move" and "Superfight".
+  - Profiles show every belt held, "Double champion", straight defenses and the move history.
+  - Contracts has the bidding-war banner with "Let them bid".
+  - Offers and Fight Prep show "CHAMPION VS CHAMPION" tags.
+  - The update prompt renders the notes as a list.
+- **Tests:** `tests/livingworld.test.ts` (6 tests) covers:
+  - 4 simulated years of moves and their consistency;
+  - an AI superfight leading to a double champion who vacates a belt;
+  - locked fighters never moving, and rosters never drained;
+  - the player challenged, losing, and the opponent becoming a double champion;
+  - the bidding-war rounds, ceilings and signing;
+  - a retiring double champion.
+
+  Test helpers moved to `tests/worldHelpers.ts`. Full suite: 17 files, 60 tests.
+- **Browser:** after 3 fast-forwarded years, 27 move stories, a superfight ("becomes a double champion") and 40
+  signing stories, and a moved fighter's profile shows his move. No errors.
+
 ## Update 17 Oct 2026 (2) — v1.1.1: readable saves, "What's new"
 - **Readable saves:** desktop careers are written as indented JSON (`careerData()` in `save.ts`, about 2 MB for a
   long career). The browser keeps compressed saves for its ~5 MB limit, and both formats always load.

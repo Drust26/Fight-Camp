@@ -61,11 +61,13 @@ export function FightPoster({ data, width = 300 }: { data: PosterData; width?: n
         <FighterCanvas side={d.red} tier={d.tier} />
         <FighterCanvas side={d.blue} mirror tier={d.tier} />
         <div className="pf-vs">VS</div>
-        <Name side={d.red} align="left" champLabel={d.tier === 'superfight' && d.homeDiv ? `${ABBR[d.homeDiv] ?? ''} CHAMPION` : undefined} />
-        <Name side={d.blue} align="right" champLabel={d.tier === 'superfight' ? `${ABBR[d.div] ?? ''} CHAMPION` : undefined} />
+        <Name side={d.red} align="left" champLabel={d.invader ? `${ABBR[d.div] ?? ''} CHAMPION` : d.tier === 'superfight' && d.homeDiv ? `${ABBR[d.homeDiv] ?? ''} CHAMPION` : undefined} />
+        <Name side={d.blue} align="right" champLabel={d.invader ? `${ABBR[d.invader] ?? ''} CHAMPION` : d.tier === 'superfight' ? `${ABBR[d.div] ?? ''} CHAMPION` : undefined} />
         {(d.tier === 'title' || d.tier === 'superfight') && (
           <div className="pf-belts">
-            {d.tier === 'superfight' && d.homeDiv
+            {d.invader
+              ? <><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{d.divName.toUpperCase()} · AT STAKE</span></div><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{DIV[d.invader].name.toUpperCase()} · HIS BELT</span></div></>
+              : d.tier === 'superfight' && d.homeDiv
               ? <><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{DIV[d.homeDiv].name.toUpperCase()} · HELD</span></div><div className="pf-beltcol"><Belt org={d.org} width={150} /><span>{d.divName.toUpperCase()} · AT STAKE</span></div></>
               : <Belt org={d.org} width={180} />}
           </div>

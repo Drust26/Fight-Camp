@@ -14,6 +14,7 @@ import type { DivisionId, OrgId, WorldFighter } from '../../../game/types';
 import { worldLegacy } from '../../../game/history';
 import { Belt, BELT_INFO } from '../../components/Belt';
 import { SUPERFIGHT_RULES, statusName } from '../../../game/superfight';
+import { beltsOf } from '../../../game/living';
 
 export function FighterModal({ id, onClose }: { id: string; onClose: () => void }) {
   const st = useGame();
@@ -53,13 +54,15 @@ function CareerDetails({ f }: { f: WorldFighter }) {
   const st = useGame();
   const [showLegacy, setShowLegacy] = useState(false);
   const lg = worldLegacy(f);
-  const champOf = Object.values(st.world.orgs).find((o) => Object.values(o.champions).includes(f.id));
+  const belts = beltsOf(st, f.id);
   const log = f.log ?? [];
   return (
     <div style={{ marginTop: 12 }}>
       <div className="row wrap" style={{ gap: 6 }}>
         {f.retired && <span className="tag">Retired{f.rd ? ` ${fmtDate(f.rd, { month: 'short', year: 'numeric' })}` : ''}</span>}
-        {champOf && <span className="tag gold"><Crown size={11} /> {ORG[champOf.id].short} champion{f.rgn != null ? ` · ${Math.round((st.day - f.rgn) / 30)} mo reign` : ''}</span>}
+        {belts.map((b) => <span key={b.org + b.div} className="tag gold"><Crown size={11} /> {ORG[b.org].short} {DIV[b.div].name} champion</span>)}
+        {belts.length >= 2 && <span className="tag accent">Double champion</span>}
+        {belts.length > 0 && f.rgn != null && <span className="tag">{Math.round((st.day - f.rgn) / 30)} mo reign{f.rdf ? ` · ${f.rdf} straight defense${f.rdf === 1 ? '' : 's'}` : ''}</span>}
         {(f.ttl ?? 0) > 0 && <span className="tag gold">{f.ttl} title win{f.ttl === 1 ? '' : 's'}</span>}
         {(f.dfn ?? 0) > 0 && <span className="tag gold">{f.dfn} defense{f.dfn === 1 ? '' : 's'}</span>}
         {(f.stk ?? 0) >= 2 && <span className="tag green">{f.stk}-fight win streak</span>}
@@ -67,6 +70,11 @@ function CareerDetails({ f }: { f: WorldFighter }) {
         {f.deb != null && <span className="tag">Debut {fmtDate(f.deb, { month: 'short', year: 'numeric' })}</span>}
         <button className="chip" onClick={() => setShowLegacy((x) => !x)}>Legacy {lg.total}</button>
       </div>
+      {(f.mv ?? []).length > 0 && (
+        <div className="tiny muted" style={{ marginTop: 6 }}>
+          {[...(f.mv ?? [])].reverse().map((m, i) => <div key={i}>{Object.keys(DIV).indexOf(m.t) > Object.keys(DIV).indexOf(m.f) ? 'Moved up' : 'Moved down'} from {DIV[m.f].name} to {DIV[m.t].name} · {fmtDate(m.d, { month: 'short', year: 'numeric' })}: {m.why}</div>)}
+        </div>
+      )}
       {showLegacy && (
         <div className="panel tight" style={{ marginTop: 8 }}>
           {lg.factors.map((x) => <div key={x.label} className="row between tiny"><span>{x.label}</span><span className={x.value >= 0 ? 'green' : 'red'}>{x.value >= 0 ? '+' : ''}{x.value}</span></div>)}

@@ -31,6 +31,72 @@ export function makeContractOffer(st: GameState, rng: RNG, org: OrgId, note: str
   };
 }
 
+// ───────────────────────────── free-agency bidding war (v1.2)
+export const BID_ROUNDS = 3;
+const r100 = (n: number) => Math.round(n / 100) * 100;
+
+/** A free agent promotions fight over: champion, top-5 contender, popular, or high leverage. */
+export function inDemand(st: GameState) {
+  const p = st.player;
+  const rank = playerRank(st);
+  return p.isChampion || (rank !== null && rank <= 5) || p.popularity >= 45 || leverage(st, p.orgId) >= 60;
+}
+
+/** Your promotion and up to two rivals send offers at once, each with a hidden ceiling it can raise to. */
+export function startBiddingWar(st: GameState, rng: RNG): boolean {
+  const p = st.player;
+  const ovr = overallRating(p.attrs);
+  const cur = ORG[p.orgId];
+  const rivals = ORGS.filter((o) => o.id !== p.orgId && o.tier >= Math.max(2, cur.tier - 1) && o.tier <= cur.tier + 1 && ovr >= o.level[0] - 3)
+    .sort((a, b) => b.tier - a.tier).slice(0, 2);
+  if (!rivals.length) return false;
+  const orgs: OrgId[] = [p.orgId, ...rivals.map((o) => o.id)];
+  st.contractOffers = st.contractOffers.filter((c) => !orgs.includes(c.orgId));
+  for (const org of orgs) {
+    const o = makeContractOffer(st, rng, org, org === p.orgId ? 'Your promotion wants to keep you' : `The ${ORG[org].short} wants to sign you away`);
+    if (ORG[org].tier < cur.tier) { o.purse = r100(o.purse * 1.25); o.winBonus = r100(o.winBonus * 1.25); o.signingBonus = r100(o.signingBonus * 1.5); } // paying a premium to lure a star down
+    o.expiresDay = st.day + 21;
+    o.bid = { max: r100(o.purse * (1.15 + leverage(st, org) / 300 + rng.range(0, 0.15))) };
+    st.contractOffers.push(o);
+  }
+  st.bidRounds = 0;
+  inbox(st, 'offer', 'BIDDING WAR', `${orgs.length} promotions want you: ${orgs.map((x) => ORG[x].short).join(', ')}. Sign now, or let them bid for up to ${BID_ROUNDS} rounds: each round they try to outbid each other until they reach their limit.`);
+  addNews(st, { kind: 'signing', title: `Bidding war for ${p.firstName} ${p.lastName}`, body: `The free agent is courted by the ${orgs.map((x) => ORG[x].short).join(', ')}.`, refs: ['player'], org: p.orgId, div: p.divisionId, imp: 2 });
+  return true;
+}
+
+/** One bidding round: every promotion that still can tries to top the best offer; a promotion far behind walks away. */
+export function letThemBid(st: GameState, rng: RNG): { ok: boolean; message: string } {
+  const bids = st.contractOffers.filter((c) => c.bid);
+  if (!bids.length) return { ok: false, message: 'There is no bidding war right now.' };
+  if ((st.bidRounds ?? 0) >= BID_ROUNDS || bids.every((c) => c.bid!.final)) return { ok: false, message: 'Every promotion has made its final offer.' };
+  st.bidRounds = (st.bidRounds ?? 0) + 1;
+  const best = Math.max(...bids.map((c) => c.purse));
+  const lines: string[] = [];
+  for (const c of bids) {
+    const b = c.bid!;
+    b.raised = 0;
+    if (b.final) { lines.push(`${ORG[c.orgId].short} holds at ${c.purse.toLocaleString()}`); continue; }
+    const target = Math.max(c.purse * rng.range(1.04, 1.1), best * rng.range(1.02, 1.08));
+    const next = Math.min(b.max, target);
+    if (next <= c.purse) { b.final = true; lines.push(`${ORG[c.orgId].short} cannot go higher`); continue; }
+    const k = next / c.purse;
+    c.purse = r100(next); c.winBonus = r100(c.winBonus * k); c.signingBonus = r100(c.signingBonus * k);
+    b.raised = Math.round((k - 1) * 100);
+    if (c.purse >= b.max * 0.99) b.final = true;
+    c.expiresDay = Math.max(c.expiresDay, st.day + 7);
+    lines.push(`${ORG[c.orgId].short} raises to ${c.purse.toLocaleString()}${b.final ? ' (final offer)' : ''}`);
+  }
+  const top = Math.max(...bids.map((c) => c.purse));
+  for (const c of bids) if (bids.length > 2 && c.bid!.final && c.purse < top * 0.8) {
+    st.contractOffers = st.contractOffers.filter((x) => x.id !== c.id);
+    lines.push(`${ORG[c.orgId].short} drops out`);
+    break;
+  }
+  if (st.bidRounds >= BID_ROUNDS) for (const c of st.contractOffers) if (c.bid) c.bid.final = true;
+  return { ok: true, message: lines.join(' · ') };
+}
+
 /** Called periodically: contract offers from current promotion (renewal) and from bigger promotions when deserved. */
 export function generateContractOffers(st: GameState, rng: RNG) {
   const p = st.player;
@@ -46,6 +112,9 @@ export function generateContractOffers(st: GameState, rng: RNG) {
     }
     return;
   }
+  const freeAgent = !p.contract || p.contract.fightsLeft === 0;
+  if (st.contractOffers.some((c) => c.bid)) return; // a bidding war is running: no side offers
+  if (freeAgent && st.bidRounds === undefined && inDemand(st) && rng.chance(0.6) && startBiddingWar(st, rng)) return;
   if ((!p.contract || p.contract.fightsLeft === 0) && !have(p.orgId) && rng.chance(0.5)) {
     st.contractOffers.push(makeContractOffer(st, rng, p.orgId, 'Renewal offer from your current promotion'));
     inbox(st, 'offer', 'Contract renewal offer', `The ${ORG[p.orgId].name} wants to re-sign you.`);
@@ -100,7 +169,9 @@ export function signContract(st: GameState, offerId: string): string | null {
     st.promoterRelation = 5;
     st.declinedOffers = 0;
   }
-  st.contractOffers = st.contractOffers.filter((c) => c.id !== offerId);
+  st.contractOffers = st.contractOffers.filter((c) => c.id !== offerId && !(off.bid && c.bid)); // the other bidders withdraw
+  if (off.bid) addNews(st, { kind: 'signing', title: `${p.firstName} ${p.lastName} signs with the ${ORG[off.orgId].short} after a bidding war`, body: `${off.fights} fights at ${off.purse.toLocaleString()} + ${off.winBonus.toLocaleString()} per win.`, refs: ['player'], org: off.orgId, div: p.divisionId, imp: 2 });
+  st.bidRounds = undefined;
   inbox(st, 'offer', `Signed with ${ORG[off.orgId].short}`, `${off.fights} fights at ${off.purse.toLocaleString()} + ${off.winBonus.toLocaleString()} win bonus.`);
   addTimeline(st, 'contract', `${moving ? 'Signed with' : 'Re-signed with'} the ${ORG[off.orgId].name}: ${off.fights} fights at ${off.purse.toLocaleString()}/${off.winBonus.toLocaleString()}.`);
   if (moving && ORG[off.orgId].tier >= 3) addNews(st, { kind: 'signing', title: `${p.firstName} ${p.lastName} signs with the ${ORG[off.orgId].short}`, body: `${p.record.w}-${p.record.l} ${p.divisionId} fighter inks a ${off.fights}-fight deal.`, refs: ['player'], org: off.orgId, div: p.divisionId, imp: 2 });

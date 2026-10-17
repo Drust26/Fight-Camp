@@ -92,6 +92,7 @@ export interface PosterMeta {
   myRec?: string; oppRec?: string; oppNick?: string; oppNat?: string; oppHeight?: number;
   undercard?: string[];
   rematch?: number; rivalry?: boolean;
+  invader?: DivisionId; // the opponent came from this division as its champion
 }
 
 export interface ReignEnd { day: number; kind: 'lost' | 'vacated' | 'stripped'; reason: string; fightId?: string }
@@ -212,6 +213,11 @@ export interface WorldFighter {
   pk?: number; // peak overall
   pkd?: number; // day of peak
   rd?: number; // retirement day
+  // ── v1.2 living world (optional)
+  rdf?: number; // consecutive defenses in the current reign
+  mv?: { d: number; f: DivisionId; t: DivisionId; why: string }[]; // weight-class moves
+  dbl?: number; // day this fighter became a double champion (holds two belts in one promotion)
+  sfx?: number; // day of the last superfight attempt (cooldown)
 }
 
 /** Compact per-fighter career log entry. */
@@ -228,7 +234,7 @@ export interface BoutRecord {
 
 export interface NewsItem {
   id: string; day: number;
-  kind: 'title' | 'defense' | 'upset' | 'retire' | 'prospect' | 'streak' | 'signing' | 'injury' | 'event' | 'record' | 'player' | 'result';
+  kind: 'title' | 'defense' | 'upset' | 'retire' | 'prospect' | 'streak' | 'signing' | 'injury' | 'event' | 'record' | 'player' | 'result' | 'move' | 'superfight';
   title: string; body: string;
   refs: string[]; // fighter ids mentioned
   org?: OrgId; div?: DivisionId;
@@ -291,6 +297,7 @@ export interface FightOffer {
   note?: string;
   div?: DivisionId; // division the bout is contested in (defaults to the player's division)
   superfight?: boolean; // HFC champion-vs-champion bout in another division
+  invader?: DivisionId; // the opponent is the champion of this other division, coming for the player's belt
 }
 
 export interface ScheduledFight extends FightOffer {
@@ -318,6 +325,7 @@ export interface ContractOffer {
   expiresDay: number;
   note: string;
   lastResponse?: string;
+  bid?: { max: number; raised?: number; final?: boolean }; // part of a free-agency bidding war
 }
 
 export interface SponsorDeal {
@@ -418,6 +426,7 @@ export interface GameState {
   callout: string | null; // fighter the player called out (weights matchmaking)
   titlePush: boolean; // player publicly demanded a title shot
   restWaivedFor?: string; // admin: id of the fight whose rest period was waived
+  bidRounds?: number; // bidding-war rounds used in the current free agency
   adminUsed?: boolean; // admin/dev tools changed this career (shown as 'Modified career')
   sponsorBuzz: number;
 }

@@ -110,7 +110,7 @@ export function resolveCard(st: GameState, rng: RNG, phase: 'before' | 'after'):
       const champ = st.world.orgs[sc.orgId].champions[c.div];
       const title = c.title && (champ === c.a || champ === c.b);
       const before = { a: ovrOf(st, c.a), b: ovrOf(st, c.b) };
-      const r = bout(st, rng, sc.orgId, a, b, title, false, sc.eventName);
+      const r = bout(st, rng, sc.orgId, a, b, title, false, sc.eventName, c.div);
       const gap = r.winner === 0 ? before.b - before.a : r.winner === 1 ? before.a - before.b : 0;
       c.result = { w: r.winner, m: r.method, r: r.round, note: gap >= 6 ? 'Upset!' : undefined };
       c.title = title;

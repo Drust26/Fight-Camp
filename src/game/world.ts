@@ -58,6 +58,14 @@ export function rankings(st: GameState, org: OrgId, div: DivisionId): RankRow[] 
       rec: `${p.record.w}-${p.record.l}${p.record.d ? '-' + p.record.d : ''}`, style: 'You', ovr: overallRating(p.attrs), injured: false, nick: p.nickname, nat: p.nationality,
     });
   }
+  // a double champion fights out of his other division: he still heads this one
+  if (champId && champId !== 'player' && !rows.some((r) => r.id === champId)) {
+    const f = st.world.fighters[champId];
+    if (f && !f.retired) rows.push({
+      id: f.id, name: fighterName(f), pts: f.pts, rank: 0, champion: true, isPlayer: false, rec: `${f.rec.w}-${f.rec.l}${f.rec.d ? '-' + f.rec.d : ''}`,
+      style: STYLE[f.style].name, ovr: overallRating(unpackAttrs(f.a)), injured: f.injuredUntil > st.day, nick: f.nick, nat: f.nat,
+    });
+  }
   const champ = rows.find((r) => r.champion);
   const rest = rows.filter((r) => !r.champion).sort((a, b) => b.pts - a.pts);
   rest.forEach((r, i) => (r.rank = i + 1));
@@ -163,7 +171,7 @@ function runOrgEvent(st: GameState, rng: RNG, org: OrgId) {
       const playerIsTop = playerContender && ranks.find((r) => r.isPlayer)?.rank === 1;
       if (contenders.length && !(playerIsTop && rng.chance(0.75))) {
         const c = contenders[0];
-        bout(st, rng, org, champ, c, true);
+        bout(st, rng, org, champ, c, true, false, undefined, d.id);
         continue;
       }
     }
@@ -179,7 +187,7 @@ function runOrgEvent(st: GameState, rng: RNG, org: OrgId) {
   for (const d of DIVISIONS) {
     if (!os.champions[d.id]) {
       const top = rosterOf(st.world, org, d.id).filter((f) => available(st, f)).sort((a, b) => b.pts - a.pts);
-      if (top.length >= 2 && rng.chance(0.5)) bout(st, rng, org, top[0], top[1], true, true);
+      if (top.length >= 2 && rng.chance(0.5)) bout(st, rng, org, top[0], top[1], true, true, undefined, d.id);
     }
   }
 }
@@ -187,16 +195,16 @@ function runOrgEvent(st: GameState, rng: RNG, org: OrgId) {
 export interface WorldBoutResult { winner: 0 | 1 | -1; method: Method; round: number }
 
 /** Resolve an AI-vs-AI bout through the world simulation and record it everywhere (shared path). */
-export function bout(st: GameState, rng: RNG, org: OrgId, a: WorldFighter, b: WorldFighter, title: boolean, vacant = false, event?: string): WorldBoutResult {
+export function bout(st: GameState, rng: RNG, org: OrgId, a: WorldFighter, b: WorldFighter, title: boolean, vacant = false, event?: string, div: DivisionId = a.div): WorldBoutResult {
   const aOvr = ovrOf(st, a.id), bOvr = ovrOf(st, b.id);
   const res = quickFight(rng, a, b, title ? 5 : 3);
   const os = st.world.orgs[org];
-  const champBefore = os.champions[a.div] ?? null;
+  const champBefore = os.champions[div] ?? null;
   a.lastFight = b.lastFight = st.day;
   if (res.winner === -1) {
     recordResult(a, 'D', 'DRAW');
     recordResult(b, 'D', 'DRAW');
-    recordBout(st, { org, div: a.div, a: a.id, b: b.id, winner: -1, method: 'DRAW', round: res.round, title, vacant, event, champBefore, aOvr, bOvr });
+    recordBout(st, { org, div, a: a.id, b: b.id, winner: -1, method: 'DRAW', round: res.round, title, vacant, event, champBefore, aOvr, bOvr });
     return res;
   }
   const W = res.winner === 0 ? a : b;
@@ -216,17 +224,17 @@ export function bout(st: GameState, rng: RNG, org: OrgId, a: WorldFighter, b: Wo
   wa.experience = Math.min(99, wa.experience + 1);
   wa.confidence = Math.min(99, wa.confidence + 1);
   W.a = packAttrs(wa);
-  const relevant = st.player.divisionId === a.div && st.player.orgId === org;
+  const relevant = st.player.divisionId === div && st.player.orgId === org;
   if (title && (vacant || champBefore !== W.id)) {
-    os.champions[a.div] = W.id;
-    os.titleHistory.push({ day: st.day, div: a.div, champ: W.id, name: fighterName(W) });
-    if (relevant) notify(st, `${ORG[org].short} — new ${DIVISIONS.find((d) => d.id === a.div)!.name} champion`, `${fighterName(W)} ${vacant ? 'claims the vacant belt' : 'dethrones ' + fighterName(L)} by ${res.method} in round ${res.round}.`);
+    os.champions[div] = W.id;
+    os.titleHistory.push({ day: st.day, div, champ: W.id, name: fighterName(W) });
+    if (relevant) notify(st, `${ORG[org].short} — new ${DIVISIONS.find((d) => d.id === div)!.name} champion`, `${fighterName(W)} ${vacant ? 'claims the vacant belt' : 'dethrones ' + fighterName(L)} by ${res.method} in round ${res.round}.`);
   }
-  recordBout(st, { org, div: a.div, a: a.id, b: b.id, winner: res.winner, method: res.method, round: res.round, title, vacant, event, champBefore, aOvr, bOvr });
+  recordBout(st, { org, div, a: a.id, b: b.id, winner: res.winner, method: res.method, round: res.round, title, vacant, event, champBefore, aOvr, bOvr });
   // a champion leaving the fight injured is news
-  const champNow = os.champions[a.div];
+  const champNow = os.champions[div];
   for (const f of [W, L]) if (f.id === champNow && f.injuredUntil > st.day + 45)
-    addNews(st, { kind: 'injury', title: `${ORG[org].short} champion sidelined`, body: `${fighterName(f)} is expected to be out until around ${Math.round((f.injuredUntil - st.day) / 30)} months from now.`, refs: [f.id], org, div: a.div, imp: ORG[org].tier >= 3 ? 2 : 1 });
+    addNews(st, { kind: 'injury', title: `${ORG[org].short} champion sidelined`, body: `${fighterName(f)} is expected to be out until around ${Math.round((f.injuredUntil - st.day) / 30)} months from now.`, refs: [f.id], org, div, imp: ORG[org].tier >= 3 ? 2 : 1 });
   return res;
 }
 
@@ -257,6 +265,17 @@ function developWorld(st: GameState, rng: RNG, day: number) {
   if (Math.floor(day / 30) % 3 === 0) movePromotions(st, rng, day);
 }
 
+/** A fighter leaving the sport gives up every belt he holds (a double champion holds two). */
+export function vacateAllBelts(st: GameState, f: WorldFighter, why: string) {
+  for (const o of ORGS) for (const d of DIVISIONS) {
+    if (st.world.orgs[o.id].champions[d.id] !== f.id) continue;
+    st.world.orgs[o.id].champions[d.id] = null;
+    addNews(st, { kind: 'title', title: `${o.short} ${d.name} title vacated`, body: `${fighterName(f)} ${why}. The belt is vacant.`, refs: [f.id], org: o.id, div: d.id, imp: o.tier >= 3 ? 2 : 1 });
+    if (st.player.divisionId === d.id && st.player.orgId === o.id) notify(st, `${o.short} title vacated`, `${fighterName(f)} ${why}. The belt is vacant.`);
+  }
+  f.dbl = undefined;
+}
+
 function movePromotions(st: GameState, rng: RNG, day: number) {
   const w = st.world;
   for (const o of ORGS) {
@@ -270,11 +289,7 @@ function movePromotions(st: GameState, rng: RNG, day: number) {
         if ((age > 35 && rng.chance((age - 34) * 0.06)) || (losing && age > 31 && rng.chance(0.25))) {
           f.retired = true;
           onRetire(st, f);
-          if (champId === f.id) {
-            w.orgs[o.id].champions[d.id] = null;
-            addNews(st, { kind: 'title', title: `${o.short} ${d.name} title vacated`, body: `${fighterName(f)} retires as champion. The belt is vacant.`, refs: [f.id], org: o.id, div: d.id, imp: o.tier >= 3 ? 2 : 1 });
-            if (st.player.divisionId === d.id && st.player.orgId === o.id) notify(st, `${o.short} title vacated`, `${fighterName(f)} retires as champion. The belt is vacant.`);
-          }
+          vacateAllBelts(st, f, 'retires as champion');
         }
       }
       // promotions up a tier

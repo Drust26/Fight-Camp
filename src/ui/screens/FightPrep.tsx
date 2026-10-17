@@ -60,6 +60,7 @@ export function FightPrep() {
           <div className="row wrap" style={{ gap: 6 }}>
             {sc.title && <span className="tag gold"><Trophy size={12} /> {ORG[sc.orgId].short} {DIV[sc.div ?? p.divisionId].name} Championship</span>}
             {sc.superfight && <span className="tag accent">SUPERFIGHT · {DIV[sc.div!].name} ({DIV[sc.div!].lb} lb)</span>}
+            {sc.invader && <span className="tag accent">CHAMPION VS CHAMPION · {DIV[sc.invader].name} champion</span>}
             <span className="tag">{sc.eventName}</span>
             <span className="tag">{fmtDate(sc.day)}</span>
             <span className="tag">{sc.rounds} × 5:00</span>

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { FileSignature, Handshake, BadgeDollarSign, Star, ArrowUpRight } from 'lucide-react';
+import { FileSignature, Handshake, BadgeDollarSign, Star, ArrowUpRight, Gavel } from 'lucide-react';
 import { Btn, Modal, useNav } from '../../components/common';
 import { store, useGame } from '../../../game/store';
 import { ORG } from '../../../data/world';
 import { SPONSOR } from '../../../data/training';
-import { acceptSponsor, buyoutCost, declineSponsor, dropSponsor, leverage, negotiate, signContract, turnPro, type Ask } from '../../../game/economy';
-import { fmtDate, money } from '../../../game/core';
+import { acceptSponsor, BID_ROUNDS, buyoutCost, declineSponsor, dropSponsor, letThemBid, leverage, negotiate, signContract, turnPro, type Ask } from '../../../game/economy';
+import { fmtDate, money, withRng } from '../../../game/core';
 import type { ContractOffer } from '../../../game/types';
 
 export function ContractsTab() {
@@ -16,6 +16,7 @@ export function ContractsTab() {
   const [neg, setNeg] = useState<ContractOffer | null>(null);
   const [ask, setAsk] = useState<Ask>({ purse: 0, winBonus: 0, signingBonus: 0, fights: 4 });
   const [reply, setReply] = useState<string>('');
+  const [bidMsg, setBidMsg] = useState<string>('');
 
   const openNeg = (o: ContractOffer) => { setNeg(o); setAsk({ purse: o.purse, winBonus: o.winBonus, signingBonus: o.signingBonus, fights: o.fights }); setReply(o.lastResponse ?? ''); };
   const liveNeg = neg ? st.contractOffers.find((x) => x.id === neg.id) : null;
@@ -68,10 +69,24 @@ export function ContractsTab() {
 
       <div className="panel">
         <div className="panel-title"><h3><Handshake size={16} /> Contract offers</h3></div>
+        {st.contractOffers.some((c) => c.bid) && (() => {
+          const used = st.bidRounds ?? 0;
+          const done = used >= BID_ROUNDS || st.contractOffers.filter((c) => c.bid).every((c) => c.bid!.final);
+          return (
+            <div className="bid-banner">
+              <div className="grow">
+                <b className="gold"><Gavel size={15} style={{ verticalAlign: -2 }} /> Bidding war</b> <span className="tiny dim">round {used}/{BID_ROUNDS}</span>
+                <div className="small muted">{done ? 'Every promotion has made its final offer. Sign the one you want.' : 'Promotions are competing for you. Let them bid to push the offers up, until each reaches its limit. Signing ends the war.'}</div>
+                {bidMsg && <div className="small" style={{ marginTop: 4 }}>{bidMsg}</div>}
+              </div>
+              <Btn variant="primary" disabled={done} onClick={() => { const r = store.act((g) => withRng(g, (rng) => letThemBid(g, rng))); if (r) { setBidMsg(r.message); nav.toast(r.ok ? 'New bids are in.' : r.message, r.ok ? 'ok' : 'err'); } }}><Gavel size={15} /> Let them bid</Btn>
+            </div>
+          );
+        })()}
         {st.contractOffers.length ? st.contractOffers.map((o) => (
           <div key={o.id} className="row between wrap" style={{ padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
             <div className="grow">
-              <div><b style={{ color: ORG[o.orgId].color }}>{ORG[o.orgId].name}</b> <span className="tag">Tier {ORG[o.orgId].tier}</span> <span className="tiny dim">{o.note}</span></div>
+              <div><b style={{ color: ORG[o.orgId].color }}>{ORG[o.orgId].name}</b> <span className="tag">Tier {ORG[o.orgId].tier}</span>{o.bid?.final && <span className="tag gold" style={{ marginLeft: 6 }}>Final offer</span>}{!!o.bid?.raised && <span className="tag green" style={{ marginLeft: 6 }}>+{o.bid.raised}% this round</span>} <span className="tiny dim">{o.note}</span></div>
               <div className="small">{o.fights} fights · {money(o.purse)} + {money(o.winBonus)} win · signing {money(o.signingBonus)}{o.champClause ? ' · champion clause' : ''}{o.exclusive ? ' · exclusive' : ''}</div>
               <div className="tiny muted">{ORG[o.orgId].expectations} Expires {fmtDate(o.expiresDay, { day: 'numeric', month: 'short' })}.{o.lastResponse ? ` Last word: "${o.lastResponse}"` : ''}</div>
             </div>

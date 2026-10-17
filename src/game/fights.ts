@@ -19,6 +19,7 @@ import { currentReign, endReign, recordDefense, startReign } from './reigns';
 import { posterMetaFor } from './poster';
 import { defensesUntilSuperfight, markOffered, onSuperfightWin, superfightDate, superfightDivision, superfightOpponent, superfightPitch } from './superfight';
 import { postFightLines } from './announcer';
+import { beltsOf, invaderFor } from './living';
 
 export const CAMP_FOCUS: { id: CampFocus; name: string; desc: string }[] = [
   { id: 'general', name: 'General Camp', desc: 'Balanced preparation. Small sharpness bonus.' },
@@ -152,6 +153,21 @@ export function generateOffers(st: GameState, rng: RNG) {
     const champId = st.world.orgs[p.orgId].champions[p.divisionId];
     const rank = playerRank(st);
     if (champId === 'player') {
+      // living world: a dominant champion from the next division comes for the player's belt
+      const inv = invaderFor(st);
+      if (inv && !st.offers.some((o) => o.invader) && rng.chance(0.4)) {
+        const io = makeOffer(st, rng, { title: true, opponentId: inv.id, note: `Champion vs champion: the ${DIV[inv.div].name} champion wants your belt` });
+        if (io) {
+          io.invader = inv.div;
+          io.purse = Math.round(io.purse * 1.3); io.winBonus = Math.round(io.winBonus * 1.3);
+          inv.sfx = st.day;
+          st.offers.push(io); st.lastOfferDay = st.day;
+          const up = Object.keys(DIV).indexOf(p.divisionId) > Object.keys(DIV).indexOf(inv.div);
+          inbox(st, 'offer', 'CHAMPION VS CHAMPION', `${fighterName(inv)} (${recStr(inv.rec)}), the ${ORG[p.orgId].short} ${DIV[inv.div].name} champion with ${inv.rdf ?? 0} straight defenses, is moving ${up ? 'up' : 'down'} to challenge you for your ${DIV[p.divisionId].name} title on ${fmtDate(io.day)}. If he wins, he holds two belts.`);
+          addNews(st, { kind: 'superfight', title: `${fighterName(inv)} calls out ${p.firstName} ${p.lastName}`, body: `The ${ORG[p.orgId].short} ${DIV[inv.div].name} champion wants a champion-vs-champion fight for the ${DIV[p.divisionId].name} title.`, refs: [inv.id, 'player'], org: p.orgId, div: p.divisionId, imp: 2 });
+          return;
+        }
+      }
       const top = rankings(st, p.orgId, p.divisionId).filter((r) => !r.isPlayer && !r.injured).slice(0, 3);
       const o = top.length ? makeOffer(st, rng, { title: true, opponentId: rng.pick(top).id, note: 'Mandatory title defense' }) : null;
       if (o) { st.offers.push(o); st.lastOfferDay = st.day; inbox(st, 'offer', 'Title defense offer', `${ORG[o.orgId].short} wants you to defend your belt on ${fmtDate(o.day)}.`); }
@@ -467,6 +483,10 @@ export function applyFightResult(st: GameState, fs: FightState, adaptMemory?: Re
           endReign(st, sc.orgId, fdiv, { kind: 'lost', reason: `Lost to ${fighterName(opp)} by ${out.method} (round ${out.round})`, fightId: sc.id });
           os.champions[fdiv] = opp.id;
           os.titleHistory.push({ day: st.day, div: fdiv, champ: opp.id, name: fighterName(opp) });
+          if (beltsOf(st, opp.id).filter((b) => b.org === sc.orgId).length >= 2) {
+            opp.dbl = st.day; // a champion from another division took the player's belt: he holds two
+            addNews(st, { kind: 'superfight', title: `${fighterName(opp)} becomes a double champion`, body: `The ${ORG[sc.orgId].short} ${DIV[opp.div].name} champion takes the ${DIV[fdiv].name} title from ${p.firstName} ${p.lastName} by ${out.method} (round ${out.round}).`, refs: [opp.id, 'player'], org: sc.orgId, div: fdiv, imp: 3 });
+          }
           p.isChampion = false;
           p.reignDefenses = 0;
           p.superNextAt = undefined;

@@ -150,6 +150,7 @@ export function recordBout(st: GameState, b: BoutInput): BoutRecord {
       }
       setReign(W, st.day);
       incr(W, 'ttl');
+      if (W !== 'player' && st.world.fighters[W]) st.world.fighters[W].rdf = 0;
       const age = ageOfId(st, W);
       setRecord(st, 'oldestChamp', { id: W, name: nameOf(st, W), value: Math.round(age * 10) / 10, day: st.day, detail: `won ${ORG[b.org].short} ${divName} title at ${age.toFixed(1)}` });
       setRecord(st, 'youngestChamp', { id: W, name: nameOf(st, W), value: Math.round(age * 10) / 10, day: st.day, detail: `won ${ORG[b.org].short} ${divName} title at ${age.toFixed(1)}` }, true);
@@ -162,6 +163,7 @@ export function recordBout(st: GameState, b: BoutInput): BoutRecord {
       });
     } else {
       incr(W, 'dfn');
+      if (W !== 'player' && st.world.fighters[W]) st.world.fighters[W].rdf = (st.world.fighters[W].rdf ?? 0) + 1;
       const t = tracked(st, W);
       setRecord(st, 'mostDefenses', { id: W, name: nameOf(st, W), value: t.dfn, day: st.day, detail: `${t.dfn} successful title defenses` });
       if (W !== 'player' && L !== 'player') addNews(st, { kind: 'defense', title: `${ORG[b.org].short} ${divName} title retained`, body: `${nameOf(st, W)} defends against ${nameOf(st, L!)} by ${b.method} (R${b.round}) — defense #${t.dfn}.`, refs: [W, L!], org: b.org, div: b.div, imp: tier >= 4 ? 2 : 1 });

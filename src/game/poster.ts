@@ -19,6 +19,7 @@ export interface PosterData {
   slotLabel: string; titleLine: string | null; homeDiv?: DivisionId; vacant?: boolean;
   tagline: string; red: PosterSide; blue: PosterSide; undercard: string[];
   result?: { text: string; won: boolean | null };
+  invader?: DivisionId; // blue corner is the champion of this division, challenging for red's belt
 }
 
 const VENUE: Record<string, string> = { amateur: 'Community hall', regional: 'Regional venue', standard: 'Arena', major: 'Major arena', title: 'Championship night' };
@@ -62,6 +63,7 @@ export function posterMetaFor(st: GameState, sc: ScheduledFight): PosterMeta {
     myRec: recStr(sc.amateur ? p.amateurRecord : p.record), oppRec: opp ? recStr(opp.rec) : '', oppNick: opp?.nick ?? '', oppNat: opp?.nat ?? '', oppHeight: opp?.h,
     undercard: card.filter((c) => !c.player).slice(0, 4).map((c) => `${nameOf(st, c.a).split(' ').slice(-1)[0]} vs ${nameOf(st, c.b).split(' ').slice(-1)[0]}`),
     rematch: opp?.vsPlayer.length ?? 0, rivalry: (st.rivalries[sc.opponentId] ?? 0) >= 30,
+    ...(sc.invader ? { invader: sc.invader } : {}),
   };
 }
 
@@ -87,7 +89,7 @@ export function posterForScheduled(st: GameState, sc: ScheduledFight): PosterDat
   const m = posterMetaFor(st, sc);
   const opp = st.world.fighters[sc.opponentId];
   const div = sc.div ?? p.divisionId;
-  const tier = posterTier({ amateur: sc.amateur, org: sc.orgId, title: sc.title, superfight: sc.superfight, slot: m.slot, rivalry: m.rivalry, rematch: m.rematch });
+  const tier = posterTier({ amateur: sc.amateur, org: sc.orgId, title: sc.title, superfight: sc.superfight || !!sc.invader, slot: m.slot, rivalry: m.rivalry, rematch: m.rematch });
   const homeChamp = !!sc.superfight || m.champion === 'player';
   return {
     id: sc.id, tier, eventName: sc.eventName, org: sc.orgId, orgName: sc.amateur ? 'Amateur Showcase' : ORG[sc.orgId].name, orgShort: sc.amateur ? 'AM' : ORG[sc.orgId].short, orgColor: ORG[sc.orgId].color,
@@ -95,8 +97,9 @@ export function posterForScheduled(st: GameState, sc: ScheduledFight): PosterDat
     div, divName: DIV[div].name, lbs: DIV[div].lb, rounds: sc.rounds, slotLabel: SLOT_LABEL[m.slot ?? 'prelim'],
     titleLine: sc.title ? titleLine(sc.orgId, div, m.vacant, sc.superfight) : null, homeDiv: m.homeDiv, vacant: m.vacant,
     tagline: tagline(sc.id, tier, m, DIV[div].name),
-    red: playerSide(st, m.myRec ?? '', homeChamp), blue: oppSide(st, sc.opponentId, opp ? `${opp.first} ${opp.last}` : 'Opponent', opp ? recStr(opp.rec) : '', m.oppNick ?? '', m.oppNat ?? '', m.champion === 'opponent'),
+    red: playerSide(st, m.myRec ?? '', homeChamp), blue: oppSide(st, sc.opponentId, opp ? `${opp.first} ${opp.last}` : 'Opponent', opp ? recStr(opp.rec) : '', m.oppNick ?? '', m.oppNat ?? '', m.champion === 'opponent' || !!sc.invader),
     undercard: m.undercard ?? [],
+    invader: sc.invader,
   };
 }
 
@@ -118,7 +121,7 @@ export function posterForHistory(st: GameState, h: FightHistoryEntry): PosterDat
   const before = [...p.history].filter((x) => x.amateur === h.amateur && x.day < h.day);
   const w = before.filter((x) => x.result === 'W').length, l = before.filter((x) => x.result === 'L').length, d = before.filter((x) => x.result === 'D').length;
   const myRec = m.myRec ?? `${w}-${l}${d ? '-' + d : ''}`;
-  const tier = posterTier({ amateur: h.amateur, org: h.orgId, title: h.title, superfight: m.superfight, slot: m.slot ?? (h.title ? 'mainevent' : undefined), rivalry: m.rivalry, rematch: m.rematch });
+  const tier = posterTier({ amateur: h.amateur, org: h.orgId, title: h.title, superfight: m.superfight || !!m.invader, slot: m.slot ?? (h.title ? 'mainevent' : undefined), rivalry: m.rivalry, rematch: m.rematch });
   const venue = VENUE[m.kind ?? eventKind({ amateur: h.amateur, orgId: h.orgId, title: h.title })];
   const won = h.result === 'W' ? true : h.result === 'L' ? false : null;
   return {
@@ -128,7 +131,8 @@ export function posterForHistory(st: GameState, h: FightHistoryEntry): PosterDat
     titleLine: h.title ? titleLine(h.orgId, div, m.vacant, m.superfight) : null, homeDiv: m.homeDiv, vacant: m.vacant,
     tagline: tagline(h.id, tier, m, DIV[div].name),
     red: playerSide(st, myRec, !!m.superfight || m.champion === 'player'),
-    blue: oppSide(st, h.opponentId, h.opponentName, m.oppRec ?? h.opponentRecord, m.oppNick ?? '', m.oppNat ?? '', m.champion === 'opponent', div, m.oppHeight),
+    blue: oppSide(st, h.opponentId, h.opponentName, m.oppRec ?? h.opponentRecord, m.oppNick ?? '', m.oppNat ?? '', m.champion === 'opponent' || !!m.invader, div, m.oppHeight),
+    invader: m.invader,
     undercard: m.undercard ?? [],
     result: { text: `${h.result === 'W' ? 'WON' : h.result === 'L' ? 'LOST' : 'DRAW'} · ${h.method}${['UD', 'SD', 'MD', 'DRAW'].includes(h.method) ? '' : ` R${h.round} ${h.time}`}`, won },
   };

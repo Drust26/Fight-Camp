@@ -1,3 +1,4 @@
+import { livingWorld } from './living';
 // Career creation, time advancement, monthly processing, aging and retirement.
 import { lookFromLegacy, sanitizeLook } from './look';
 import { currentReign, endReign, VACATE } from './reigns';
@@ -195,6 +196,7 @@ export function advanceDays(st: GameState, n: number): AdvanceResult {
 
 function monthly(st: GameState, rng: RNG, lines: string[]) {
   const p = st.player;
+  livingWorld(st, rng); // weight-class moves, AI superfights and double champions, poaching
   // champions who cannot or do not defend are eventually stripped (vacancy recorded in the trophy case)
   if (p.isPro && !p.retired && !st.scheduled && !p.pendingBeltChoice && st.world.orgs[p.orgId]?.champions[p.divisionId] === 'player') {
     const lastFight = p.history[0]?.day ?? 0;

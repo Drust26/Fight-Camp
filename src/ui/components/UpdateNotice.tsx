@@ -28,6 +28,17 @@ export function restartAndUpdate() {
   return native?.updates?.install();
 }
 
+/** Release notes are markdown bullets that may wrap over several lines: one item per bullet. */
+function noteItems(text: string): string[] {
+  const out: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const b = /^\s*[-*]\s+(.*)$/.exec(line);
+    if (b) out.push(b[1].trim());
+    else if (line.trim()) { if (out.length) out[out.length - 1] += ' ' + line.trim(); else out.push(line.trim()); }
+  }
+  return out;
+}
+
 const mb = (n?: number) => `${((n ?? 0) / 1048576).toFixed(1)} MB`;
 
 export function UpdateNotice() {
@@ -60,7 +71,7 @@ export function UpdateNotice() {
       <div className="modal" style={{ maxWidth: 520 }} role="dialog" aria-label="Update ready">
         <div className="row between"><h2>Update ready: version {st.version}</h2><button className="chip" aria-label="Close (update later)" onClick={() => { setLater(true); native!.updates!.later(); }}><X size={14} /></button></div>
         <p className="small muted" style={{ marginTop: 8 }}>You have v{st.current}. Fight Camp will save your career, close, install the update and reopen by itself. Your careers in {native.savesDir()} are not touched.</p>
-        {st.notes && <pre className="upd-notes">{st.notes}</pre>}
+        {st.notes && <ul className="upd-notes wn-list">{noteItems(st.notes).map((t, i) => <li key={i}>{t}</li>)}</ul>}
         <div className="row" style={{ justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
           <Btn onClick={() => { setLater(true); native!.updates!.later(); }}>Later</Btn>
           <Btn variant="primary" disabled={busy} onClick={() => { setBusy(true); restartAndUpdate(); }}><RefreshCw size={15} /> {busy ? 'Restarting…' : 'Restart and update'}</Btn>

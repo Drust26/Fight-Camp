@@ -44,6 +44,7 @@ export function OffersTab() {
             <div className="row wrap" style={{ gap: 6 }}>
               {o.title && <span className="tag gold"><Trophy size={12} /> TITLE FIGHT · 5 rounds</span>}
               {o.superfight && o.div && <span className="tag accent">SUPERFIGHT · {DIV[o.div].name} ({DIV[o.div].lb} lb)</span>}
+              {o.invader && <span className="tag accent">CHAMPION VS CHAMPION · {DIV[o.invader].name} champion</span>}
               {o.rivalry && <span className="tag red"><Flame size={12} /> Rivalry</span>}
               {o.shortNotice && <span className="tag accent"><Clock size={12} /> Short notice</span>}
               {o.amateur && <span className="tag">Amateur bout</span>}
@@ -53,6 +54,7 @@ export function OffersTab() {
             <div style={{ fontSize: 20, fontWeight: 700 }}>{fighterName(f)} {f.nick && <span className="muted small">"{f.nick}"</span>}</div>
             <div className="small muted">{recStr(f.rec)} · {STYLE[f.style].name} · {f.stance} · {f.nat} · {Math.floor((st.day - f.bornDay) / 365)} yrs · {f.h} cm / reach {f.r} cm</div>
             <div className="small">Scouted rating <b>{Math.max(1, ovr - rng)}–{Math.min(99, ovr + rng)}</b> <span className="dim">(you: {myOvr}; scouting ±{rng})</span>{oppRank ? <> · Ranked <b>{oppRank.champion ? 'Champion' : `#${oppRank.rank}`}</b></> : ''}</div>
+            {o.invader && <div className="small gold">The {DIV[o.invader].name} champion is coming for your {DIV[p.divisionId].name} belt. Win and you beat a reigning champion; lose and he holds both belts.</div>}
             {o.superfight && <div className="small gold">Win: you become a {statusName(Math.min(2, (p.champStatus ?? 0) + 1))} and choose which belt to keep. Lose: you return to {DIV[p.divisionId].name} and keep your belt.</div>}
             <div className="small muted">{STYLE[f.style].desc} Recent: {f.recent.length ? f.recent.join(' ') : '—'}</div>
           </div>

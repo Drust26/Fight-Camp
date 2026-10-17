@@ -17,6 +17,7 @@ const data = (t: PosterTier, i: number): PosterData => ({
   red: side('red' + i, 'Alex', 'Moreno', 'The Spark', t === 'superfight'), blue: side('blue' + i * 3, 'Jae-won', 'Sato', 'The Reaper', t === 'title' || t === 'superfight'),
   undercard: ['Silva vs Okafor', 'Ito vs Walker', 'Duarte vs Lim'], result: i === 2 ? { text: 'WON · KO R2 1:12', won: true } : undefined,
 });
+const inv: PosterData = { ...data('title', 5), id: 'inv', tier: 'superfight', eventName: 'HFC 231', div: 'light', divName: 'Lightweight', lbs: 155, titleLine: 'FOR THE HFC LIGHTWEIGHT WORLD CHAMPIONSHIP', tagline: 'CHAMPION VS CHAMPION', invader: 'welter', red: side('red9', 'Alex', 'Moreno', 'The Spark', true), blue: side('blue27', 'Jae-won', 'Sato', 'The Reaper', true) };
 createRoot(document.getElementById('root')!).render(
-  <div style={{ display: 'flex', gap: 14, padding: 14, flexWrap: 'wrap' }}>{tiers.map((t, i) => <FightPoster key={t} data={data(t, i)} width={Number(new URLSearchParams(location.search).get('w') ?? 300)} />)}</div>,
+  <div style={{ display: 'flex', gap: 14, padding: 14, flexWrap: 'wrap' }}>{[...tiers.map((t, i) => data(t, i)), inv].map((d) => <FightPoster key={d.id} data={d} width={Number(new URLSearchParams(location.search).get('w') ?? 300)} />)}</div>,
 );

@@ -6,7 +6,7 @@ import { Globe2, Search, AlertTriangle } from 'lucide-react';
 import { Btn, Confirm, useNav } from '../../components/common';
 import { store, useGame } from '../../../game/store';
 import { withRng } from '../../../game/core';
-import { bout, rankings } from '../../../game/world';
+import { bout, rankings, vacateAllBelts } from '../../../game/world';
 import { addNews, onRetire } from '../../../game/history';
 import { advanceDay } from '../../../game/career';
 import { activeEvents, resolveEvent } from '../../../game/events';
@@ -96,8 +96,7 @@ export function AdminWorld() {
                   const nf = g.world.fighters[f.id];
                   nf.retired = true;
                   onRetire(g, nf);
-                  const os = g.world.orgs[nf.org];
-                  if (os.champions[nf.div] === nf.id) { os.champions[nf.div] = null; addNews(g, { kind: 'title', title: `${ORG[nf.org].short} ${DIV[nf.div].name} title vacated`, body: `${fighterName(nf)} retired (admin).`, refs: [nf.id], org: nf.org, div: nf.div, imp: 1 }); }
+                  vacateAllBelts(g, nf, 'retired (admin)');
                   setSel(null);
                   return 'Retired.';
                 })}>Retire…</Btn>

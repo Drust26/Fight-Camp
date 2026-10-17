@@ -14,7 +14,7 @@ import type { NewsItem, RecordsBook, RecordEntry } from '../../../game/types';
 type View = 'news' | 'p4p' | 'records' | 'hall';
 const KIND_NAME: Record<NewsItem['kind'], string> = {
   title: 'Title change', defense: 'Title defense', upset: 'Upset', retire: 'Retirement', prospect: 'Prospect', streak: 'Streak', signing: 'Signing',
-  injury: 'Injury', event: 'Event recap', record: 'Record', player: 'You', result: 'Result',
+  injury: 'Injury', event: 'Event recap', record: 'Record', player: 'You', result: 'Result', move: 'Weight-class move', superfight: 'Superfight',
 };
 const RECORD_NAME: Record<keyof RecordsBook, string> = {
   mostWins: 'Most career wins', mostFinishes: 'Most finishes', mostDefenses: 'Most title defenses', longestReign: 'Longest completed title reign',
