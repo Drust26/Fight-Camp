@@ -5,6 +5,7 @@ import { Download, RefreshCw, X } from 'lucide-react';
 import { Btn, useNav } from './common';
 import { native, type UpdateState } from '../../game/storage';
 import { store } from '../../game/store';
+import { ChangelogButton } from './WhatsNew';
 
 const BUSY = new Set(['fight', 'practice', 'quickbout', 'fightnight']);
 
@@ -74,7 +75,14 @@ export function UpdateNotice() {
 export function UpdatePanel() {
   const st = useUpdateState();
   const [checking, setChecking] = useState(false);
-  if (!native?.updates) return null;
+  if (!native?.updates) {
+    return (
+      <div className="panel">
+        <div className="panel-title"><h3><RefreshCw size={16} /> Version</h3><ChangelogButton /></div>
+        <div className="small muted">Fight Camp v{__APP_VERSION__}. The browser version is always the latest; the Windows game updates itself.</div>
+      </div>
+    );
+  }
   const line = !st ? 'Checking…'
     : st.status === 'none' ? `You have the latest version (v${st.current}).`
     : st.status === 'checking' ? 'Checking GitHub for updates…'
@@ -88,6 +96,7 @@ export function UpdatePanel() {
       <div className="panel-title"><h3><RefreshCw size={16} /> Updates</h3>
         <div className="row" style={{ gap: 6 }}>
           {st?.status === 'ready' && <Btn size="sm" variant="primary" onClick={() => restartAndUpdate()}>Restart and update</Btn>}
+          <ChangelogButton />
           <Btn size="sm" disabled={checking || st?.status === 'downloading' || st?.status === 'checking'} onClick={async () => { setChecking(true); try { await native!.updates!.check(); } finally { setChecking(false); } }}>Check now</Btn>
         </div>
       </div>

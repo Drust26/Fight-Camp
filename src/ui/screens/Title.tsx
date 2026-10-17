@@ -1,3 +1,4 @@
+import { WhatsNewOnUpdate } from '../components/WhatsNew';
 import { native } from '../../game/storage';
 import { LogoMark } from '../components/Logo';
 import { useEffect, useMemo, useRef } from 'react';
@@ -75,6 +76,7 @@ export function TitleScreen() {
 
   return (
     <div className="title-screen">
+      <WhatsNewOnUpdate />
       <div className="title-bg" />
       <div className="title-left">
         <div className="logo-lockup">

@@ -45,7 +45,7 @@ export function SettingsScreen({ standalone }: { standalone?: boolean }) {
 
   const body = (
     <div className="col" style={{ gap: 16, maxWidth: 980 }}>
-      {native && <UpdatePanel />}
+      <UpdatePanel />
       {native && (
         <div className="panel">
           <div className="panel-title"><h3><FolderOpen size={16} /> Saves</h3><Btn size="sm" onClick={() => native!.openSavesFolder()}><FolderOpen size={14} /> Open saves folder</Btn></div>

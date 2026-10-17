@@ -20,6 +20,14 @@ export function decodeSave(raw: string): string {
   return out;
 }
 
+/**
+ * How a career is written: the desktop app keeps plain, readable JSON files (disk space is not a concern there); the
+ * browser keeps them compressed (its storage is ~5 MB). Both formats always load.
+ */
+export function careerData(json: string): string {
+  return native ? JSON.stringify(JSON.parse(json), null, 2) : encodeSave(json);
+}
+
 export const SLOTS = [1, 2, 3];
 const KEY = (slot: number) => `fightcamp.slot.${slot}`;
 const BACKUP = (slot: number) => `fightcamp.slot.${slot}.bak`;
@@ -78,6 +86,23 @@ function setLastSlot(slot: number) {
     const raw = storage.getItem(META);
     const m = raw ? JSON.parse(raw) : {};
     storage.setItem(META, JSON.stringify({ ...m, lastSlot: slot }));
+  } catch { /* ignore */ }
+}
+
+/** The version whose "What's new" the player last saw; `played` tells a returning player from a first run. */
+export function seenVersion(): { seen: string | null; played: boolean } {
+  try {
+    const raw = storage.getItem(META);
+    if (!raw) return { seen: null, played: SLOTS.some((s) => !!storage.getItem(KEY(s))) };
+    const m = JSON.parse(raw);
+    return { seen: m.seenVersion ?? null, played: true };
+  } catch { return { seen: null, played: false }; }
+}
+export function setSeenVersion(v: string) {
+  try {
+    const raw = storage.getItem(META);
+    const m = raw ? JSON.parse(raw) : {};
+    storage.setItem(META, JSON.stringify({ ...m, seenVersion: v }));
   } catch { /* ignore */ }
 }
 
@@ -208,7 +233,7 @@ export function slotInfos(): SlotInfo[] {
 
 export function writeSlot(st: GameState): { ok: boolean; error?: string } {
   st.savedAt = Date.now();
-  const data = encodeSave(JSON.stringify(st));
+  const data = careerData(JSON.stringify(st));
   const isQuota = (e: any) => e?.name === 'QuotaExceededError' || e?.code === 22 || e?.code === 1014;
   const tryWrite = () => storage.setItem(KEY(st.slot), data);
   try {
@@ -276,7 +301,7 @@ export function importToSlot(slot: number, json: string): string | null {
     const err = validate(parsed);
     if (err) return err;
     parsed.slot = slot;
-    storage.setItem(KEY(slot), encodeSave(JSON.stringify(migrate(parsed))));
+    storage.setItem(KEY(slot), careerData(JSON.stringify(migrate(parsed))));
     return null;
   } catch { return 'Not valid save data'; }
 }

@@ -1,5 +1,23 @@
 # Development checklist
 
+## Update 17 Oct 2026 (2) — v1.1.1: readable saves, "What's new"
+- **Readable saves:** desktop careers are written as indented JSON (`careerData()` in `save.ts`, about 2 MB for a
+  long career). The browser keeps compressed saves for its ~5 MB limit, and both formats always load.
+  - A 1.1.0 save is converted the next time it is saved, and the previous file stays in `saves/backups`.
+  - Checkpoints and replays stay compressed (internal files).
+- **"What's new"** (`src/game/changelog.ts`, `ui/components/WhatsNew.tsx`):
+  - CHANGELOG.md is bundled at build time.
+  - The title screen shows the notes for every version newer than the last one seen (`seenVersion` in settings).
+  - A first run records the version silently; a player with existing careers but no `seenVersion` (coming from 1.1.0) sees the current notes.
+  - Settings → Version/Updates has a "What's new" button with the full changelog, in the browser too.
+- **Tests:**
+  - `tests/desktop_saves.test.ts`: the desktop bridge faked in memory; the JSON format, old compressed saves loading and converting, backup restore; changelog parsing and "versions since".
+  - A test that fails if CHANGELOG.md has no section for the current version.
+  - Full suite: 16 files, 54 tests.
+- **Browser and desktop checks:**
+  - First run shows no "What's new"; after an update it shows once.
+  - Packaged desktop app with the player's real 1.1.0 save (Antoine Belmondo 20-0): "What's new" shown, the career continues, and saving rewrites it as readable JSON with the old file kept as a backup.
+
 ## Update 17 Oct 2026 — GitHub repository and automatic updates (v1.1.0)
 - **Repository:** github.com/Drust26/Fight-Camp, public, with `main` as the default branch.
   - The game's version lives in `desktop/package.json` and is shown on the title screen (`__APP_VERSION__`).
